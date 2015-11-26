@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,9 +41,7 @@ public class Configuration {
     int numberOfMachineStatsPerSlot;
     
     double[] phiWeight;
-    HashMap[] _vmRequestRateConfig;
-    HashMap[] _vmLifeTimeConfig;
- 
+     
     List<String> cloudVM_AB_IPs=new ArrayList<>();
     List<String> cloudVM_VLC_IPs=new ArrayList<>();
     
@@ -68,7 +67,7 @@ public class Configuration {
     int abRequestsNumber=1000;
     int abBatchRequestsNumber=100;
     HashMap associatedAPsPerClient;
-            
+    
     public Configuration() {
   
         this.clientNames=new ArrayList<>();
@@ -78,17 +77,16 @@ public class Configuration {
         this.associatedAPsPerClient=new HashMap();
                 
         this.addHostNodes();        
+      
         this.addClientNodes();
         this.addServices();
         this.addVmTypes();
         this.loadProperties();
-        this.loadRequestRatesParameters();
-        this.loadVmLifetimeParameters();
         this.loadFairnessWeights();
         this.loadResources();
         this.loadPenalties();
         this.loadExternalCloudParameters();
-        
+       
      
     }
    
@@ -120,12 +118,8 @@ public class Configuration {
             }
         
         }
-    
-        
-        
-        
-        
-        
+      
+
         private void addClientNodes() {
             
             Properties property = new Properties();
@@ -374,139 +368,7 @@ public class Configuration {
     }
     
     
-    private void loadRequestRatesParameters() {
-
-      
-        Properties property = new Properties();
-	InputStream input = null;    
-     	String filename = "simulation.properties";
     
-        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
-                
-        try {
-            // load a properties file
-            property.load(input);
-        } catch (IOException ex) {
-            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        String parameter="";
-        String rateType="";
-        double value=-1;
-        
-        _vmRequestRateConfig=new HashMap[providersNumber];
-        
-        // InterArrival Time
-        for (int i = 0; i < providersNumber; i++) {
-            
-            _vmRequestRateConfig[i]=new HashMap();
-            
-            parameter="vmRate_type_"+i;
-            rateType=String.valueOf((String)property.getProperty(parameter));
-            
-            if(EGeneratorType.Exponential.toString().equals(rateType)){
-                parameter="vmRate_lamda_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                value=(double)1/value;
-                _vmRequestRateConfig[i].put("vmRate_type",EGeneratorType.Exponential.toString());
-                _vmRequestRateConfig[i].put("mean",value);
-            }
-            else if(EGeneratorType.Pareto.toString().equals(rateType)){
-                _vmRequestRateConfig[i].put("vmRate_type",EGeneratorType.Pareto.toString());
-                
-                parameter="vmRate_location_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmRequestRateConfig[i].put("location",value);
-                
-                parameter="vmRate_shape_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmRequestRateConfig[i].put("shape",value);
-            
-            }
-            else if(EGeneratorType.Random.toString().equals(rateType)){
-                  _vmRequestRateConfig[i].put("vmRate_type",EGeneratorType.Random.toString());
-                
-                parameter="vmRate_min_rate_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmRequestRateConfig[i].put("min",value);
-                
-                parameter="vmRate_max_rate_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmRequestRateConfig[i].put("max",value);
-                
-                
-                
-                
-             }
-            
-         }
-        
-        
-    }
-
-    private void loadVmLifetimeParameters() {
-
-      
-        Properties property = new Properties();
-	InputStream input = null;    
-     	String filename = "simulation.properties";
-        String parameter="";
-        String rateType="";
-        double value=-1;
-        
-        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
-                
-        try {
-            // load a properties file
-            property.load(input);
-       
-            _vmLifeTimeConfig=new HashMap[providersNumber];
-        
-        // InterArrival Time
-        for (int i = 0; i < providersNumber; i++) {
-            
-            _vmLifeTimeConfig[i]=new HashMap();
-            
-            parameter="lifetime_type_"+i;
-            rateType=String.valueOf((String)property.getProperty(parameter));
-            
-            if(EGeneratorType.Exponential.toString().equals(rateType)){
-                parameter="lifetime_lamda_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                value=(double)1/value;
-                _vmLifeTimeConfig[i].put("lifetime_type",EGeneratorType.Exponential.toString());
-                _vmLifeTimeConfig[i].put("mean",value);
-            }
-            else if(EGeneratorType.Pareto.toString().equals(rateType)){
-                _vmLifeTimeConfig[i].put("lifetime_type",EGeneratorType.Pareto.toString());
-                
-                parameter="lifetime_location_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmLifeTimeConfig[i].put("location",value);
-                
-                parameter="lifetime_shape_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmLifeTimeConfig[i].put("shape",value);
-            
-            }
-            else if(EGeneratorType.Random.toString().equals(rateType)){
-                  _vmLifeTimeConfig[i].put("lifetime_type",EGeneratorType.Random.toString());
-                
-                parameter="lifetime_min_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmLifeTimeConfig[i].put("min",value);
-                
-                parameter="lifetime_max_"+i;
-                value=Double.valueOf((String)property.getProperty(parameter));
-                _vmLifeTimeConfig[i].put("max",value);
-            }
-            
-         }
-         } catch (IOException ex) {
-            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-    }
 
      private void loadExternalCloudParameters() {
 
@@ -567,14 +429,6 @@ public class Configuration {
 
     public int getSlotDuration() {
         return slotDuration;
-    }
-
-    public HashMap[] getVmRequestRateConfig() {
-        return _vmRequestRateConfig;
-    }
-
-    public HashMap[] getVmLifeTimeConfig() {
-        return _vmLifeTimeConfig;
     }
     
     public String getSlotDurationMetric() {
@@ -716,6 +570,9 @@ public class Configuration {
     public List<String> getCloudVM_VLC_IPs() {
         return cloudVM_VLC_IPs;
     }
+
+  
+   
 
     
     

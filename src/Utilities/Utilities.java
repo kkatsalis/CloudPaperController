@@ -10,7 +10,7 @@ import Controller.Host;
 import Controller.Slot;
 import Controller.VM;
 import Controller.VMRequest;
-import Controller.ServiceRequestsPattern;
+import Controller.RequestForService;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -33,7 +33,7 @@ public class Utilities {
         return randomNum;
     }
     
-    public static List<String> determineVMs(Configuration _config, int serviceType,  ServiceRequestsPattern _servicePattern,List<VM> activeVMs) {
+    public static List<String> determineVMs(Configuration _config, int serviceType,  RequestForService _servicePattern,List<VM> activeVMs) {
         
        List<String> vms=new ArrayList<>(); 
       
