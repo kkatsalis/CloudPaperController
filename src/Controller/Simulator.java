@@ -10,6 +10,8 @@ import Enumerators.ESlotDurationMetric;
 import Statistics.ABStats;
 import Statistics.DBClass;
 import Statistics.DBUtilities;
+import Statistics.WebRequestStats;
+import Utilities.FakeWebRequestUtilities;
 import Utilities.Utilities;
 import Utilities.WebUtilities;
 
@@ -49,14 +51,16 @@ public class Simulator {
 
    
    // How to create requests per Service, one per provider
-    List<String>[] _rateGeneratorType; 
-    List<Exponential>[] _rateExponentialGenerator;
-    List<Pareto>[] _rateParetoGenerator;
+    Exponential[][] _rateExponentialGenerator;
+    Pareto[][] _rateParetoGenerator;
 
     // Lifetime of VM one per provider
-    List<String>[] _lifetimeGeneratorType; 
-    List<Exponential>[] _lifetimeExponentialGenerator;
-    List<Pareto>[] _lifetimeParetoGenerator;
+    Exponential[][] _lifetimeExponentialGenerator;
+    Pareto[][] _lifetimeParetoGenerator;
+    
+    // How to create web requests per Service, one per provider
+    Exponential[][] _webRequestArrivalRateExponentialGenerator;
+    Pareto[][] _webRequestArrivalRateParetoGenerator;
 
     DBClass _db;
     DBUtilities _dbUtilities;
@@ -66,18 +70,19 @@ public class Simulator {
     long experimentStop;
 
     Timer controllerTimer;
-    Timer[] _clientsTimer;
+    Timer[][][] _clientsTimer;
 
     WebUtilities _webUtility;
     Provider[] _provider;
-    
+    FakeWebRequestUtilities _fakeWebUtilities;
+     
     public Simulator(){
            
            this._config=new Configuration();
            this._hostNames=_config.getHostNames();
            this._clientNames=_config.getClientNames();
            this.controllerTimer = new Timer();
-           this._clientsTimer=new Timer[_clientNames.size()];
+           this._clientsTimer=new Timer[_clientNames.size()][_config.getProvidersNumber()][_config.getServicesNumber()];
            
           
            this._webUtility=new WebUtilities(_config); 
@@ -87,107 +92,171 @@ public class Simulator {
            System.out.println("********** System Initialization Phase ****************");
            
            initializeNodesAndSlots(); //creates: Hosts, Clients, Slots
-           initializeRateGenerators(); 
-           initializeVmLifetimeGenerators();
            initializeProviders();
-           initializeRequestPattern();
-           addInitialVmEvents();
+           initializeServiceArrivalRateGenerators(); 
+           initializeLifeTimeGenerators();
+           initializeWebRequestsArrivalRateGenerators();
            
-           this._controller=new Controller(_hosts,_webClients,_config,_slots,_dbUtilities); 
+           addInitialServiceRequestEvents();
            
+           this._controller=new Controller(_hosts,_webClients,_config,_slots,_dbUtilities,_provider); 
+           this._fakeWebUtilities=new FakeWebRequestUtilities(_provider, _config);
+          
            System.out.println("********** End of System Initialization Phase **************");
            System.out.println();
            
-           if (false)
+           if (true)
               this.startClientsRequests();
        }
-      
 
+    private void initializeLifeTimeGenerators(){
+    
+     // Lifetime of VM one per provider
+     _lifetimeExponentialGenerator=new Exponential[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+     _lifetimeParetoGenerator=new Pareto[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+    
+       String lifetimeType="";
+       String parameter="";
+       double lamda;
+       double location;
+       double shape;
        
-
-
-    private void initializeRateGenerators()
-    {
-         _rateGeneratorType=new String[_config.getProvidersNumber()];
-
+       int servicesNumber=0;
+       
         for (int i = 0; i < _config.getProvidersNumber(); i++) {
-            _rateGeneratorType[i]=_config.getVmRequestRateConfig()[i].get("vmRate_type").toString();
+            servicesNumber=_provider[i].getRequestsForService().size();
+            
+            for (int j = 0; j < servicesNumber; j++) {
+                parameter="provider"+i+"_service"+j+"_lifetimeType";
+                lifetimeType=String.valueOf(_provider[i].getRequestsForService().get(j).getLifeTimeConfig().get(parameter));
+                
+                if(lifetimeType.equals(EGeneratorType.Exponential.toString())){
+                    
+                    parameter="provider"+i+"_service"+j+"_lifetime_lamda";
+                    lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getLifeTimeConfig().get(parameter)));
+                    _lifetimeExponentialGenerator[i][j]=new Exponential(lamda);
+                  
+                }
+                else if(lifetimeType.equals(EGeneratorType.Pareto.toString())){
+                    
+                    parameter= "provider"+i+"_service"+j+"_lifetime_location";
+                    location=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getLifeTimeConfig().get(parameter)));
+                    parameter= "provider"+i+"_service"+j+"_lifetime_shape";
+                    shape=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getLifeTimeConfig().get(parameter)));
+                
+                    _lifetimeParetoGenerator[i][j]=new Pareto(location, shape); //Dummy object
+                }
+              
+              
+            
         }
 
-        // 2. Build the array of generators
-        double lamda;
-        double location;
-        double shape;
 
-        this._rateExponentialGenerator=new Exponential[_config.getProvidersNumber()];
-        this._rateParetoGenerator=new Pareto[_config.getProvidersNumber()];
+        }
+    }
 
-            for (int i = 0; i < _config.getProvidersNumber(); i++) {
-
-                if(_rateGeneratorType[i].equals(EGeneratorType.Exponential.toString())){
-
-                    lamda=((Double)_config.getVmRequestRateConfig()[i].get("mean"));
-                    this._rateExponentialGenerator[i]=new Exponential(lamda);
-                    this._rateParetoGenerator[i]=null;
+    private void initializeServiceArrivalRateGenerators()
+    {
+        
+           // How to create requests per Service, one per provider
+        _rateExponentialGenerator=new Exponential[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+        _rateParetoGenerator=new Pareto[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+        
+       String rateType="";
+       String parameter="";
+       double lamda;
+       double location;
+       double shape;
+       
+       int servicesNumber=0;
+       
+        for (int i = 0; i < _config.getProvidersNumber(); i++) {
+            servicesNumber=_provider[i].getRequestsForService().size();
+            
+            for (int j = 0; j < servicesNumber; j++) {
+                parameter="provider"+i+"_service"+j+"_RateType";
+                rateType=String.valueOf(_provider[i].getRequestsForService().get(j).getRequestRateConfig().get(parameter));
+                
+                if(rateType.equals(EGeneratorType.Exponential.toString())){
+                    
+                    parameter="provider"+i+"_service"+j+"_rate_lamda";
+                    lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getRequestRateConfig().get(parameter)));
+                    _rateExponentialGenerator[i][j]=new Exponential(lamda);
+           
+                   
                 }
-                else if(_rateGeneratorType[i].equals(EGeneratorType.Pareto.toString())){
-
-                  _rateExponentialGenerator[i]=null;  
-                  location=((Double)_config.getVmRequestRateConfig()[i].get("location"));
-                  shape =((Double)_config.getVmRequestRateConfig()[i].get("shape"));
-
-                  this._rateParetoGenerator[i]=new Pareto(location, shape);
-                  double mean=_rateParetoGenerator[i].mean();
-                  System.out.print(mean);
+                else if(rateType.equals(EGeneratorType.Pareto.toString())){
+                                    
+                    parameter= "provider"+i+"_service"+j+"_rate_location";
+                    location=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getRequestRateConfig().get(parameter)));
+                    parameter= "provider"+i+"_service"+j+"_rate_shape";
+                    shape=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getRequestRateConfig().get(parameter)));
+                
+                    _rateParetoGenerator[i][j]=new Pareto(location, shape); //Dummy object
                 }
+               
+              
+            
+        }
 
-            }      
+
+        }
 
     }
 
-    private void initializeVmLifetimeGenerators()
+    private void initializeWebRequestsArrivalRateGenerators()
     {
-             _lifetimeGeneratorType=new String[_config.getProvidersNumber()];
+        
+           // How to create requests per Service, one per provider
+        _webRequestArrivalRateExponentialGenerator=new Exponential[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+        _webRequestArrivalRateParetoGenerator=new Pareto[_config.getProvidersNumber()][_config.getServicesNumber()]; 
+        
+       String rateType="";
+       String parameter="";
+       double lamda;
+       double location;
+       double shape;
+       
+       int servicesNumber=0;
+       
+        for (int i = 0; i < _config.getProvidersNumber(); i++) {
+            servicesNumber=_provider[i].getRequestsForService().size();
+            
+            for (int j = 0; j < servicesNumber; j++) {
+                parameter="provider"+i+"_service"+j+"_webRequestType";
+                rateType=String.valueOf(_provider[i].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().get(parameter));
+                
+                if(rateType.equals(EGeneratorType.Exponential.toString())){
+                    
+                    parameter="provider"+i+"_service"+j+"_webRequest_lamda";
+                    lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().get(parameter)));
+                    _webRequestArrivalRateExponentialGenerator[i][j]=new Exponential(lamda);
+                
+                }
+                else if(rateType.equals(EGeneratorType.Pareto.toString())){
+                  
+                    
+                    parameter= "provider"+i+"_service"+j+"_webRequest_location";
+                    location=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().get(parameter)));
+                    parameter= "provider"+i+"_service"+j+"_webRequest_shape";
+                    shape=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().get(parameter)));
+                
+                    _webRequestArrivalRateParetoGenerator[i][j]=new Pareto(location, shape); //Dummy object
+                }
+              
+            
+        }
 
-            for (int i = 0; i < _config.getProvidersNumber(); i++) {
-                _lifetimeGeneratorType[i]=_config.getVmRequestRateConfig()[i].get("vmRate_type").toString();
-            }
-
-            // 2. Build the array of generators
-            double lamda;
-            double location;
-            double shape;
-
-            this._lifetimeExponentialGenerator=new Exponential[_config.getProvidersNumber()];
-            this._lifetimeParetoGenerator=new Pareto[_config.getProvidersNumber()];
-
-                for (int i = 0; i < _config.getProvidersNumber(); i++) {
-
-                    if(_lifetimeGeneratorType[i].equals(EGeneratorType.Exponential.toString())){
-
-                        lamda=((Double)_config.getVmRequestRateConfig()[i].get("mean"));
-                        this._lifetimeExponentialGenerator[i]=new Exponential(lamda);
-                        this._lifetimeParetoGenerator[i]=null;
-                    }
-                    else if(_lifetimeGeneratorType[i].equals(EGeneratorType.Pareto.toString())){
-
-                      _lifetimeExponentialGenerator[i]=null;  
-                      location=((Double)_config.getVmRequestRateConfig()[i].get("location"));
-                      shape =((Double)_config.getVmRequestRateConfig()[i].get("shape"));
-
-                      this._lifetimeParetoGenerator[i]=new Pareto(location, shape);
-                      double mean=_lifetimeParetoGenerator[i].mean();
-                      System.out.print(mean);
-                    }
-
-                }      
 
         }
-       
+
+    } 
    
     
     private void initializeNodesAndSlots() {
     
+        Random rand=new Random();
+        
         // Initialize Hosts
         this._hosts=new Host[_config.getHostNames().size()];
         
@@ -200,10 +269,15 @@ public class Simulator {
         // Initialize Clients
         this._webClients=new WebClient[_config.getClientNames().size()];
          
-        for (int i = 0; i < _webClients.length; i++) {
-            _webClients[i]=new WebClient(_config,i,0,_clientNames.get(i),_controller);
-            
-            _clientsTimer[i]=new Timer();
+        for (int c = 0; c < _webClients.length; c++) {
+            _webClients[c]=new WebClient(_config,c,rand.nextInt(_config.getProvidersNumber()),_clientNames.get(c),_controller);
+            for (int p = 0; p < _config.getProvidersNumber(); p++) {
+                for (int s = 0; s < _config.getServicesNumber(); s++) {
+                    _clientsTimer[c][p][s]=new Timer();
+                }
+                
+            }
+
            
         }
         
@@ -225,46 +299,58 @@ public class Simulator {
     private void startClientsRequests(){
     
      System.out.println("********** Clients Requests Loader ****************");
-     for (int i = 0; i < _webClients.length; i++) {
-                _clientsTimer[i].schedule(new ExecuteClientRequest(i,0),500); //Start the Client Requests (initial delay 100)
-                
-     }
      
-     System.out.println("****** All Clients Request Generators Loaded ******");
-     System.out.println();
+     for (int c = 0; c < _webClients.length; c++) {
+        for (int p = 0; p < _config.getProvidersNumber(); p++) {
+            for (int s = 0; s < _config.getServicesNumber(); s++) {
+               _clientsTimer[c][p][s].schedule(new ExecuteClientRequest(c,p,s,0),100); //Start the Client Requests (initial delay 100)
+            }
+        }
+        System.out.println("****** All Clients Request Generators Loaded ******");
+        System.out.println();
+        }
     }
         
-    private void addInitialVmEvents() {
+    private void addInitialServiceRequestEvents() {
          
             int runningSlot=0;
-            int vmRequests=1;
+            int serviceRequests=1;
+            int servicesNumber=0;
             //add first VM in slot 0
-            CreateNewVMRequest(0,runningSlot,true);
+            
             
             for (int i = 0; i < _config.getProvidersNumber(); i++) {
                 
-                runningSlot=0;
+                servicesNumber=_provider[i].getRequestsForService().size();
+            
+                for (int j = 0; j < servicesNumber; j++) {
+            
+                    CreateNewServiceRequest(0,j,runningSlot,true);    
+            
+                    runningSlot=0;
                 
-                while(runningSlot<_config.getNumberOfSlots()){
+                    while(runningSlot<_config.getNumberOfSlots()){
                     
-                    runningSlot=CreateNewVMRequest(i,runningSlot,false);
-                    vmRequests++;
+                        runningSlot=CreateNewServiceRequest(i,j,runningSlot,false);
+                        serviceRequests++;
 
+                }
                 }
             }
             
-            System.out.println("Simulator Initialization:"+vmRequests+" VM Rquests Added for all Experiment");
+            System.out.println("Simulator Initialization:"+serviceRequests);
             
         }
     
     //Returns the new running slot (this can be also 0)    
-    private int CreateNewVMRequest(int providerID,int currentSlot,boolean firstSlot)
+    private int CreateNewServiceRequest(int providerID,int serviceID, int currentSlot,boolean firstSlot)
     {
         int slot2AddVM=0;
         int slot2RemoveVM=0;
         
-        int lifetime=calculateVMLifeTime(providerID);
-            
+        int lifetime=calculateServiceLifeTime(providerID,serviceID);
+        String serviceName="";
+        
         if(lifetime<1)
                 lifetime=1;
         
@@ -274,36 +360,37 @@ public class Simulator {
         if(firstSlot)
            slotDistance=0;
         else 
-           slotDistance= calculateSlotsAway(providerID);
+           slotDistance= calculateSlotsAway(providerID,serviceID);
         
         slot2AddVM=currentSlot+slotDistance;
         slot2RemoveVM=slot2AddVM+lifetime;
         
         if(slot2AddVM<_config.getNumberOfSlots()){
-            
-            int serviceType=Utilities.determineVMService(providerID,_config);
+          
              
-            List<VMRequest> newRequest = new ArrayList<>();
+            List<VMRequest> newVmRequest = new ArrayList<>();
             
-            List<String> vms=Utilities.determineVMs(_config,serviceType,_servicePattern[providerID],Utilities.findActiveVMs(slot, _hosts));
+            List<String> vms=determineVMs(_config,providerID,serviceID);
         
             if(!vms.isEmpty()){
                 
                 int index=0;
                 
                 while(index< vms.size()) {
-                        newRequest.add(new VMRequest(_config,providerID,lifetime));
-                        newRequest.get(newRequest.size()-1).setService(_config.getServicesNames().get(serviceType));
-                        newRequest.get(newRequest.size()-1).setSlotStart(slot2AddVM);
-                        newRequest.get(newRequest.size()-1).setVmType(vms.get(index));
+                    serviceName=_provider[providerID].getRequestsForService().get(serviceID).getServiceName();
+                    
+                        newVmRequest.add(new VMRequest(providerID,serviceID,lifetime,serviceName));
+                      
+                        newVmRequest.get(newVmRequest.size()-1).setSlotStart(slot2AddVM);
+                        newVmRequest.get(newVmRequest.size()-1).setVmType(vms.get(index));
                         
-                       _slots[slot2AddVM].getVmRequests2Activate()[providerID].add(newRequest.get(newRequest.size()-1));
+                       _slots[slot2AddVM].getVmRequests2Activate()[providerID].add(newVmRequest.get(newVmRequest.size()-1));
 
                      //remove vm during this slot
-                    newRequest.get(newRequest.size()-1).setSlotEnd(slot2RemoveVM);
+                    newVmRequest.get(newVmRequest.size()-1).setSlotEnd(slot2RemoveVM);
                     
                     if(slot2RemoveVM<_config.getNumberOfSlots())
-                        _slots[slot2RemoveVM].getVmRequests2Remove()[providerID].add(newRequest.get(newRequest.size()-1)); 
+                        _slots[slot2RemoveVM].getVmRequests2Remove()[providerID].add(newVmRequest.get(newVmRequest.size()-1)); 
 
                     index++;
                     }
@@ -321,31 +408,53 @@ public class Simulator {
 
     }
 
-    
-    private int calculateSlotsAway(int providerID) {
+     private List<String> determineVMs(Configuration _config, int providerID, int serviceID) {
+        
+       List<String> vms=new ArrayList<>(); 
+           
+       if(providerID==0)
+            vms.add("small");
+       if(providerID==1){
+            vms.add("medium");
+            vms.add("large");
+       }
+        
+      return vms;
+      
+    }
      
+     
+     
+    private int calculateSlotsAway(int providerID, int serviceID) {
     		
        int interArrivalTime=-1;
-
        double min=0;
        double max=0;
-        Double value;
-        switch (EGeneratorType.valueOf(this._rateGeneratorType[providerID])){
+       Double value;
+       String parameter="provider"+providerID+"_service"+serviceID+"_RateType";
+       
+       String generatorType= String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getRequestRateConfig().get(parameter));
+        
+        switch (EGeneratorType.valueOf(generatorType)){
             case Exponential:
-                value=_rateExponentialGenerator[providerID].random();
+                value=_rateExponentialGenerator[providerID][serviceID].random();
                 interArrivalTime = value.intValue();
                 break;
             
             case Pareto:
-                value=_rateParetoGenerator[providerID].random();
+                value=_webRequestArrivalRateParetoGenerator[providerID][serviceID].random();
                 interArrivalTime=value.intValue();
                                 
                 break;
             
             
             case Random: 
-               min= Double.valueOf(_config.getVmRequestRateConfig()[providerID].get("min").toString());
-               max= Double.valueOf(_config.getVmRequestRateConfig()[providerID].get("max").toString());
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_rate_min";
+                min=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getRequestRateConfig().get(parameter))); 
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_rate_max";
+                max=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getRequestRateConfig().get(parameter))); 
                 
                interArrivalTime = Utilities.randInt((int)min, (int)max);
                 break;
@@ -360,31 +469,36 @@ public class Simulator {
         
         }
    
-     private int calculateVMLifeTime(int providerID) {
+    private int calculateServiceLifeTime(int providerID,int serviceID) {
      
-    		
-        int lifetime=-1;
-
-        double min=0;
-        double max=0;
-        Double value;
+       int lifetime=-1;
+       double min=0;
+       double max=0;
+       Double value;
+       String parameter="provider"+providerID+"_service"+serviceID+"_lifetimeType";
+       
+       String generatorType= String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getLifeTimeConfig().get(parameter));
         
-        switch (EGeneratorType.valueOf(this._lifetimeGeneratorType[providerID])){
+        switch (EGeneratorType.valueOf(generatorType)){
             case Exponential:
-                value=_lifetimeExponentialGenerator[providerID].random();
+                value=_lifetimeExponentialGenerator[providerID][serviceID].random();
                 lifetime = value.intValue();
                 break;
             
             case Pareto:
-                value=_lifetimeParetoGenerator[providerID].random();
+                value=_lifetimeParetoGenerator[providerID][serviceID].random();
                 lifetime=value.intValue();
                                 
                 break;
             
             
             case Random: 
-               min= Double.valueOf(_config.getVmLifeTimeConfig()[providerID].get("min").toString());
-               max= Double.valueOf(_config.getVmLifeTimeConfig()[providerID].get("max").toString());
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_lifetime_min";
+                min=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getLifeTimeConfig().get(parameter))); 
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_lifetime_max";
+                max=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getLifeTimeConfig().get(parameter))); 
                 
                lifetime = Utilities.randInt((int)min, (int)max);
                 break;
@@ -393,17 +507,62 @@ public class Simulator {
             default:            
                 break;
         }
+       
         
  
         if(lifetime!=0)
             return lifetime;
         else 
-            return 3;
+            return 5;
         
     }
+    
+    private int calculateWebRequestInterarrivalInterval(int providerID, int serviceID) {
+    		
+       int interArrivalTime=-1;
+       double min=0;
+       double max=0;
+       Double value;
+       String parameter="provider"+providerID+"_service"+serviceID+"_webRequestType";
+       
+       String generatorType= String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getWebRequestsArrivalRateConfig().get(parameter));
         
+        switch (EGeneratorType.valueOf(generatorType)){
+            case Exponential:
+                value=_webRequestArrivalRateExponentialGenerator[providerID][serviceID].random();
+                interArrivalTime = value.intValue();
+                break;
+            
+            case Pareto:
+                value=_webRequestArrivalRateParetoGenerator[providerID][serviceID].random();
+                interArrivalTime=value.intValue();
+                                
+                break;
+            
+            
+            case Random: 
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_webRequest_min";
+                min=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getWebRequestsArrivalRateConfig().get(parameter))); 
+                
+                parameter="provider"+providerID+"_service"+serviceID+"_webRequest_max";
+                max=Double.valueOf(String.valueOf(this._provider[providerID].getRequestsForService().get(serviceID).getWebRequestsArrivalRateConfig().get(parameter))); 
+                
+               interArrivalTime = Utilities.randInt((int)min, (int)max);
+                break;
+           
+           
+            default:            
+                break;
+        }
+        
+
+        return interArrivalTime;
+        
+        }
+   
      
-     public final void StartExperiment() {
+    public final void StartExperiment() {
 
             int duration=_config.getSlotDuration();
 
@@ -422,32 +581,23 @@ public class Simulator {
             
         }
 
-    private void initializeRequestPattern() {
-     
-        
-        
-        for (int i = 0; i < _config.getProvidersNumber(); i++) {
-           
-                _servicePattern[i].
-                        
-        
-        
-        }
-        
-    }
-
+   
     private void initializeProviders() {
     
         _provider=new Provider[_config.getProvidersNumber()];
         
         for (int i = 0; i < _config.getProvidersNumber(); i++) {
             _provider[i]=new Provider(i);
-            loadRequestsForServiceRateParameters(i);
+            loadArrivalRateParameters(i);
+            loadLifetimeGeneratorParameters(i);
+            loadWebRequestsGeneratorParameters(i);
+            loadLocalServiceTimeGeneratorParameters(i);
+            loadCloudServiceTimeGeneratorParameters(i);
         }
         
     }
 
-     private void loadRequestsForServiceRateParameters(int providerID) {
+    private void loadArrivalRateParameters(int providerID) {
 
       
         Properties property = new Properties();
@@ -469,7 +619,6 @@ public class Simulator {
         String serviceName;
         int numberOfRequests;
         String serviceRateType="";
-        String serviceLifetimeType="";
         double value=-1;
         int index=-1;
         
@@ -488,7 +637,7 @@ public class Simulator {
                 numberOfRequests=Integer.valueOf((String)property.getProperty(parameter));
                 
                  _provider[providerID].getRequestsForService().add(new RequestForService(providerID, j, numberOfRequests, serviceName));
-                 index=_provider[providerID].getRequestsForService().size()-1;
+                 index=j;
                 
                 //Rate Configuration
                  parameter="provider"+providerID+"_service"+j+"_RateType";
@@ -525,40 +674,75 @@ public class Simulator {
                     _provider[providerID].getRequestsForService().get(index).getRequestRateConfig().put(parameter,value);
                   
              }
+                 
+                 
+            }
+          
+            
+         }
+    
+    private void loadLifetimeGeneratorParameters(int providerID) {
+
+      
+        Properties property = new Properties();
+	InputStream input = null;    
+     	String filename = "simulation.properties";
+    
+        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
+                
+        try {
+            // load a properties file
+            property.load(input);
+        } catch (IOException ex) {
+            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        
+        int providerServicesNumber=0;
+        String parameter="";
+        String serviceLifetimeType="";
+        double value=-1;
+     
+        // InterArrival Time
+      
+            parameter="provider"+providerID+"_servicesNumber";
+            providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+            
+            for (int j = 0; j < providerServicesNumber; j++) {
               
               //Lifetime Configuration
                  parameter="provider"+providerID+"_service"+j+"_lifetimeType";
                  serviceLifetimeType=String.valueOf((String)property.getProperty(parameter));
-                 _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter, serviceLifetimeType);
+                 _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter, serviceLifetimeType);
                  
                  if(EGeneratorType.Exponential.toString().equals(serviceLifetimeType)){
                       
                     parameter="provider"+providerID+"_service"+j+"_lifetime_lamda";
                     value=Double.valueOf((String)property.getProperty(parameter));
-                    value=(double)1/value;
+                  
                     
-                    _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter,value);
+                    _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter,value);
                  }
                  else if(EGeneratorType.Pareto.toString().equals(serviceLifetimeType)){
                     
                    parameter="provider"+providerID+"_service"+j+"_lifetime_location";
                    value=Double.valueOf((String)property.getProperty(parameter));
-                    _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter,value);
+                    _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter,value);
 
                    parameter="provider"+providerID+"_service"+j+"_lifetime_shape";
                    value=Double.valueOf((String)property.getProperty(parameter));
-                    _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter,value);
+                    _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter,value);
 
                     }
                 else if(EGeneratorType.Random.toString().equals(serviceLifetimeType)){
 
                    parameter="provider"+providerID+"_service"+j+"_lifetime_min";
                    value=Double.valueOf((String)property.getProperty(parameter));
-                   _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter,value);
+                   _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter,value);
 
                    parameter="provider"+providerID+"_service"+j+"_lifetime_max";
                    value=Double.valueOf((String)property.getProperty(parameter));
-                    _provider[providerID].getRequestsForService().get(index).getLifeTimeConfig().put(parameter,value);
+                    _provider[providerID].getRequestsForService().get(j).getLifeTimeConfig().put(parameter,value);
                   
              }    
                  
@@ -570,54 +754,266 @@ public class Simulator {
             
          }
     
+    private void loadLocalServiceTimeGeneratorParameters(int providerID) {
+
+      
+        Properties property = new Properties();
+	InputStream input = null;    
+     	String filename = "simulation.properties";
+    
+        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
+                
+        try {
+            // load a properties file
+            property.load(input);
+        } catch (IOException ex) {
+            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        
+        int providerServicesNumber=0;
+        String parameter="";
+        String localServiceTimeType="";
+        double value=-1;
+     
+        // InterArrival Time
+      
+            parameter="provider"+providerID+"_servicesNumber";
+            providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
             
+            for (int j = 0; j < providerServicesNumber; j++) {
+              
+              //Lifetime Configuration
+                 parameter="provider"+providerID+"_service"+j+"_localServiceRateType";
+                 localServiceTimeType=String.valueOf((String)property.getProperty(parameter));
+                 _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter, localServiceTimeType);
+                 
+                 if(EGeneratorType.Exponential.toString().equals(localServiceTimeType)){
+                      
+                    parameter="provider"+providerID+"_service"+j+"_localServiceRate_lamda";
+                    value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter,value);
+                 
+                 }
+                 else if(EGeneratorType.Pareto.toString().equals(localServiceTimeType)){
+                    
+                   parameter="provider"+providerID+"_service"+j+"_localServiceRate_location";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_localServiceRate_shape";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter,value);
+
+                    }
+                else if(EGeneratorType.Random.toString().equals(localServiceTimeType)){
+
+                   parameter="provider"+providerID+"_service"+j+"_localServiceRate_min";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                   _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_localServiceRate_max";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getLocalServiceTimeConfig().put(parameter,value);
+                }    
+                 
+        }
+    }
+
+    private void loadCloudServiceTimeGeneratorParameters(int providerID) {
+        
+        Properties property = new Properties();
+	InputStream input = null;    
+     	String filename = "simulation.properties";
+    
+        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
+                
+        try {
+            // load a properties file
+            property.load(input);
+        } catch (IOException ex) {
+            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        
+        int providerServicesNumber=0;
+        String parameter="";
+        String cloudServiceTimeType="";
+        double value=-1;
+     
+        // InterArrival Time
+      
+            parameter="provider"+providerID+"_servicesNumber";
+            providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+            
+            for (int j = 0; j < providerServicesNumber; j++) {
+              
+              //Lifetime Configuration
+                 parameter="provider"+providerID+"_service"+j+"_cloudServiceRateType";
+                 cloudServiceTimeType=String.valueOf((String)property.getProperty(parameter));
+                 _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter, cloudServiceTimeType);
+                 
+                 if(EGeneratorType.Exponential.toString().equals(cloudServiceTimeType)){
+                      
+                    parameter="provider"+providerID+"_service"+j+"_cloudServiceRate_lamda";
+                    value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter,value);
+                 
+                 }
+                 else if(EGeneratorType.Pareto.toString().equals(cloudServiceTimeType)){
+                    
+                   parameter="provider"+providerID+"_service"+j+"_cloudServiceRate_location";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_cloudServiceRate_shape";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter,value);
+
+                    }
+                else if(EGeneratorType.Random.toString().equals(cloudServiceTimeType)){
+
+                   parameter="provider"+providerID+"_service"+j+"_cloudServiceRate_min";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                   _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_cloudServiceRate_max";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getCloudServiceTimeConfig().put(parameter,value);
+                }    
+                 
+        }
+        
+        
+        
+    }
+
+    private void loadWebRequestsGeneratorParameters(int providerID) {
+    
+         Properties property = new Properties();
+	InputStream input = null;    
+     	String filename = "simulation.properties";
+    
+        input = Configuration.class.getClassLoader().getResourceAsStream(filename);
+                
+        try {
+            // load a properties file
+            property.load(input);
+        } catch (IOException ex) {
+            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        
+        int providerServicesNumber=0;
+        String parameter="";
+        String webRequestType="";
+        double value=-1;
+     
+        // InterArrival Time
+      
+            parameter="provider"+providerID+"_servicesNumber";
+            providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+            
+            for (int j = 0; j < providerServicesNumber; j++) {
+              
+              //Lifetime Configuration
+                 parameter="provider"+providerID+"_service"+j+"_webRequestType";
+                 webRequestType=String.valueOf((String)property.getProperty(parameter));
+                 _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter, webRequestType);
+                 
+                 if(EGeneratorType.Exponential.toString().equals(webRequestType)){
+                      
+                    parameter="provider"+providerID+"_service"+j+"_webRequest_lamda";
+                    value=Double.valueOf((String)property.getProperty(parameter));
+                  
+                    _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter,value);
+                 }
+                 else if(EGeneratorType.Pareto.toString().equals(webRequestType)){
+                    
+                   parameter="provider"+providerID+"_service"+j+"_webRequest_location";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_webRequest_shape";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter,value);
+
+                    }
+                else if(EGeneratorType.Random.toString().equals(webRequestType)){
+
+                   parameter="provider"+providerID+"_service"+j+"_webRequest_min";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                   _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter,value);
+
+                   parameter="provider"+providerID+"_service"+j+"_webRequest_max";
+                   value=Double.valueOf((String)property.getProperty(parameter));
+                    _provider[providerID].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().put(parameter,value);
+                  
+             }    
+                 
+                 
+            }
+    }
+    
+    
     
     class ExecuteClientRequest extends TimerTask {
 
+        int providerID;
+        int serviceID;
         int clientID;
         int measurement=0;
         
-        public ExecuteClientRequest(int clientID,int measurement) {
+        public ExecuteClientRequest(int clientID,int providerID,int serviceID,int measurement) {
+            this.providerID=providerID;
+            this.serviceID=serviceID;
             this.measurement=measurement;
             this.clientID=clientID;
         }
 
         
          @Override
-         public void run() {
+        public void run() {
             
-            try {
-                int duration=_config.getSlotDuration();
-                
-                if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.seconds.toString()))
-                    duration=1000*duration;
-                else if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.minutes.toString()))
-                    duration=60*duration*1000;
-                else if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.hours.toString()))
-                    duration=3600*duration*1000;
-                
-                int delay = (5 + new Random().nextInt(duration));
-                
-                _clientsTimer[clientID].schedule(new ExecuteClientRequest(clientID,measurement+1), delay);
-                
-                System.out.println("Client: "+clientID+" slot: "+slot+" delay "+delay);
-                
-                String clientName=_clientNames.get(clientID);
-                String service = Utilities.chooseService2Call(_config,clientID); //Choose Service to Run
-                int providerID=_webClients[clientID].getProviderID(); //Find the provider he belongs
-                String vmIP=chooseVMforService(service, providerID,clientName);   //Find the hosting VM of the Service
-                
-                ABStats abStats=_webUtility.retrieveStatsABPerClient(clientName,vmIP); //getFromClient
-                _dbUtilities.updateABStatistics2DB(slot,measurement,abStats); //send2DB
-                
-                updateServiceRequestPattern();
-                
-                
-            } catch (IOException | JSONException ex) {
-                Logger.getLogger(Simulator.class.getName()).log(Level.SEVERE, null, ex);
+            int duration=_config.getSlotDuration();
+            
+            if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.seconds.toString()))
+                duration=1000*duration;
+            else if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.minutes.toString()))
+                duration=60*duration*1000;
+            else if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.hours.toString()))
+                duration=3600*duration*1000;
+          
+            int delay = duration*calculateWebRequestInterarrivalInterval(providerID, serviceID);
+           
+            _clientsTimer[clientID][providerID][serviceID].schedule(new ExecuteClientRequest(clientID,providerID,serviceID,measurement+1), delay);
+            String clientName=_clientNames.get(clientID);
+            String vmIP=chooseVMforService(serviceID, providerID,clientName);
+            
+            WebRequestStats stats=new WebRequestStats();
+            
+            stats.setClientID(clientID);
+            stats.setSlot(slot);
+            stats.setProviderID(providerID);
+            stats.setServiceID(serviceID);
+           
+            double responseTime;
+            String type;
+            if(_config.getCloudVM_IPs().contains(vmIP)){
+                responseTime=_fakeWebUtilities.calculateCloudServiceTime(providerID, serviceID);
+                type="cloud";
             }
-                      
-                      
+            else{
+                responseTime=_fakeWebUtilities.calculateLocalServiceTime(providerID, serviceID);
+                type="local";
+            }
+            stats.setType(type);
+            stats.setResponseTime(responseTime);
+            _dbUtilities.updateWebClientStatistics2DB(slot, stats);
+           
+            //updateServiceRequestPattern();
+            
+            
             }
 
         private void updateServiceRequestPattern() {
@@ -634,12 +1030,12 @@ public class Simulator {
     
     //Algorithm: Choose a VM in the hosting Node else choose at Random
         
-    private String chooseVMforService(String service, int providerID, String webClient){
+    private String chooseVMforService(int serviceID, int providerID, String webClient){
         
         String vmIP="";
         String hostApName="";
         Random random=new Random();
-                
+ 
         
         //Step 1: Find the hosting node
         for (int i = 0; i <_webClients.length; i++) {
@@ -655,29 +1051,26 @@ public class Simulator {
                for (Iterator iterator = _host.getVMs().iterator(); iterator.hasNext();) {
                    VM nextVM = (VM)iterator.next();
                    
-                   if(nextVM.isActive()&nextVM.getProviderID()==providerID&nextVM.getService().equals(service)){
+                   if(nextVM.isActive()&nextVM.getProviderID()==providerID&nextVM.getServiceID()==serviceID){
                        potentialVMs.add(nextVM);
                    }
                }
            }
            
            if(0==potentialVMs.size()){
-               if("AB".equals(service)){
-                  return _config.getCloudVM_AB_IPs().get(random.nextInt(_config.getCloudVM_AB_number()-1));
-                }
-               else {
-                 return _config.getCloudVM_VLC_IPs().get(random.nextInt(_config.getCloudVM_VLC_number()-1));
-               }
-                        
+                  return _config.getCloudVM_IPs().get(random.nextInt(_config.getCloudVM_IPs().size()));
             }
-                        
-        //Step 3: Find the local VM
-           for (Iterator iterator = potentialVMs.iterator(); iterator.hasNext();) {
-               VM nextVM = (VM)iterator.next();
-              
-               if(hostApName.equals(nextVM.getHostname()))
-                    vmIP=nextVM.getIp();
-        }
+                   
+           
+           vmIP=potentialVMs.get(random.nextInt(potentialVMs.size())).getIp();
+           
+//        //Step 3: Find the local VM
+//           for (Iterator iterator = potentialVMs.iterator(); iterator.hasNext();) {
+//               VM nextVM = (VM)iterator.next();
+//              
+//               if(hostApName.equals(nextVM.getHostname()))
+//                    vmIP=nextVM.getIp();
+//        }
         
         return vmIP;
     }

@@ -25,12 +25,16 @@ public class DBClass {
     ArrayList<OMLMPFieldDef> vmInterfacesStatsSchema;
     ArrayList<OMLMPFieldDef> hostInterfacesStatsSchema;
     ArrayList<OMLMPFieldDef> webClientABStatsSchema;
+    ArrayList<OMLMPFieldDef> webClientServiceStatsSchema;
+    ArrayList<OMLMPFieldDef> simulatorStatsSchema;
     
     OmlMP mp_hostStats;
     OmlMP mp_hostIinterfaceStats;
     OmlMP mp_vmStats;
     OmlMP mp_vmIinterfaceStats;
     OmlMP mp_webClientABStats;
+    OmlMP mp_webClientServiceStats;
+    OmlMP mp_simulatorStats;
     
     //(String oml_app_name, String oml_exp_id, String oml_name, String oml_server)            
     public DBClass(){
@@ -39,23 +43,34 @@ public class DBClass {
         
         omlclient = new OMLBase("katsalis", "katsalis_exp", "katsalis_testapp", "tcp:nitlab.inf.uth.gr:3003");
         
+        /* Activate in real system
         initiliazeHostDBTableSchema();
         initiliazeHostInterfaceDBTableSchema();
         initiliazeVMInterfaceDBTableSchema();
         initiliazeVMBTableSchema();
         initiliazeWebClientABTableSchema();
-        
+         */
+        initiliazeWebClientServiceTableSchema();
+        initializeSimulatorStats();
+                
         mp_hostStats = new OmlMP(hostStatsSchema);
         mp_hostIinterfaceStats = new OmlMP(hostInterfacesStatsSchema);
         mp_vmStats = new OmlMP(vmStatsSchema);
         mp_vmIinterfaceStats = new OmlMP(vmInterfacesStatsSchema);
         mp_webClientABStats = new OmlMP(webClientABStatsSchema);
-         
+        
+        mp_webClientServiceStats = new OmlMP(webClientServiceStatsSchema);
+        mp_simulatorStats=new OmlMP(simulatorStatsSchema);
+        
+        /* Activate in real system
         omlclient.addmp("hostStatsTable", mp_hostStats); 
         omlclient.addmp("hostInterfaceStatsTable",mp_hostIinterfaceStats);
         omlclient.addmp("vmStatsTable",mp_vmStats );
         omlclient.addmp("vmInterfaceStatsTable",mp_vmIinterfaceStats);
         omlclient.addmp("webClientABStatsTable",mp_webClientABStats);
+        */
+        omlclient.addmp("webClientServiceStatsTable",mp_webClientServiceStats);
+        omlclient.addmp("simulatorStatsTable",mp_simulatorStats);
 
         omlclient.start();
         
@@ -202,6 +217,39 @@ public class DBClass {
         System.out.println("DB message (5 of 5): Web Client AB Stats Schema Created");
     }
 
+    private void initiliazeWebClientServiceTableSchema(){
+        
+        webClientServiceStatsSchema=new ArrayList<>();
+        
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("slot",OMLTypes.OML_INT32_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("clientID",OMLTypes.OML_STRING_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("providerID",OMLTypes.OML_INT32_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("serviceID",OMLTypes.OML_INT32_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("responseTime",OMLTypes.OML_DOUBLE_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("type",OMLTypes.OML_STRING_VALUE));
+        
+        System.out.println("DB message: initiliazeWebClientServiceTableSchema Called");
+    }
+
+    private void initializeSimulatorStats() {
+    
+        simulatorStatsSchema=new ArrayList<>(); 
+        simulatorStatsSchema.add(new OMLMPFieldDef("slot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("providerID",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsRequested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsRquested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsRquested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsRquested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("numberOfActiveVMs",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("netBenefit",OMLTypes.OML_DOUBLE_VALUE));
+        
+          System.out.println("DB message: initializeSimulatorStats Called");
+    }
+    
     public OMLBase getOmlclient() {
         return omlclient;
     }
@@ -225,6 +273,16 @@ public class DBClass {
     public OmlMP getMp_webClientABStats() {
         return mp_webClientABStats;
     }
+
+    public OmlMP getMp_webClientServiceStats() {
+        return mp_webClientServiceStats;
+    }
+
+    public OmlMP getMp_simulatorStats() {
+        return mp_simulatorStats;
+    }
+
+   
      
 
 

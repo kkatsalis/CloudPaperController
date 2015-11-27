@@ -149,7 +149,7 @@ public class DBUtilities {
                 
                //Find the VM and add stats
                 for (int j = 0; j < _hosts[i].getVMs().size(); j++) {
-                    if(_hosts[i].getVMs().get(j).getName().equals(next.getDomain_name())){
+                    if(_hosts[i].getVMs().get(j).getVmName().equals(next.getDomain_name())){
                         _hosts[i].getVMs().get(j).setStats(next);
                     
                         updateActiveVMStatistics2DB(slot, currentInstance,_hosts[i].getNodeName(),next);
@@ -247,4 +247,45 @@ public class DBUtilities {
                       _db.getMp_webClientABStats().inject(data);
     }
     
+     public void updateSimulatorStatistics2DB(int slot, SimulatorStats stats,int providerID){
+     
+         
+        String[] data = { 
+                    String.valueOf(stats.getSlot()),
+                    String.valueOf(providerID),
+                    String.valueOf(stats.getVmsRequested()[providerID]),
+                    String.valueOf(stats.getVmsSatisfied()[providerID]),
+                    String.valueOf(stats.getSmallVmsRquested()[providerID]),
+                    String.valueOf(stats.getSmallVmsSatisfied()[providerID]),
+                    String.valueOf(stats.getMediumVmsRquested()[providerID]),
+                    String.valueOf(stats.getMediumVmsSatisfied()[providerID]),
+                    String.valueOf(stats.getLargeVmsRquested()[providerID]),
+                    String.valueOf(stats.getLargeVmsSatisfied()[providerID]),
+                    String.valueOf(stats.getNumberOfActiveVMs()[providerID]),
+                    String.valueOf(stats.getNetBenefit()),
+
+                    };
+                    
+                    _db.getMp_simulatorStats().inject(data);
+     
+     
+     }
+     
+     public void updateWebClientStatistics2DB(int slot, WebRequestStats stats){
+     
+        String[] data = { 
+                    String.valueOf(stats.getSlot()),
+                    String.valueOf(stats.getClientID()),       
+                    String.valueOf(stats.getProviderID()),
+                    String.valueOf(stats.getServiceID()),
+                    String.valueOf(stats.getResponseTime()),
+                    String.valueOf(stats.getType())
+                    };
+                    
+                    _db.getMp_webClientServiceStats().inject(data);
+     
+     
+     }
+     
+     
 }

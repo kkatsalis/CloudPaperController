@@ -18,10 +18,11 @@ public class VM {
     
     int vmID;
     int providerID;
+    int serviceID;
     String hostname;
     
     String name;
-    String service;
+    String serviceName;
     String vmType;
     String ip;
     String netmask;
@@ -46,7 +47,7 @@ public class VM {
         this.ip=(String)vmParameters.get("interIP");
         this.netmask=(String)vmParameters.get("interMask");
         
-        this.service = request.getServiceType();
+        this.serviceName = request.getServiceName();
         this.vmType = request.getVmType();
         this.providerID = request.getProviderID();
         this.vmReuestId=request.getRequestID();
@@ -60,12 +61,12 @@ public class VM {
         loadResourcesSpecification();
     }
 
-    public String getName() {
+    public String getVmName() {
         return name;
     }
 
-    public String getService() {
-        return service;
+    public String getServiceName() {
+        return serviceName;
     }
 
     public String getVmType() {
@@ -138,6 +139,10 @@ public class VM {
         
         
         }
+    }
+
+    public int getServiceID() {
+        return serviceID;
     }
 
     

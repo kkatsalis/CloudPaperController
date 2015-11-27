@@ -7,6 +7,7 @@ package Utilities;
 
 import Controller.Configuration;
 import Controller.Host;
+import Controller.Provider;
 import Controller.Slot;
 import Controller.VM;
 import Controller.VMRequest;
@@ -33,25 +34,9 @@ public class Utilities {
         return randomNum;
     }
     
-    public static List<String> determineVMs(Configuration _config, int serviceType,  RequestForService _servicePattern,List<VM> activeVMs) {
-        
-       List<String> vms=new ArrayList<>(); 
-      
-       int requests=_servicePattern.getNumberOfExpectedrequestsPerService()[serviceType];
-       //Random Allocation 
-      
-       
-      return vms;
-      
-    }
+   
     
-    public static int determineVMService(int providerID, Configuration _config) {
-        
-      int type=Utilities.randInt(0,_config.getServicesNames().size()-1);
-      
-      return type;
-    }
- 
+    
     public static Hashtable determineVMparameters(VMRequest vmRequest,String hostName) {
     
         Hashtable parameters=new Hashtable();
@@ -170,11 +155,5 @@ public class Utilities {
             
     }
      
-      public static String chooseService2Call(Configuration _config,int clientID) {
-          
-            Random rand=new Random();
-            String service=_config.getServicesNames().get(rand.nextInt(_config.getServicesNumber()-1));
-            
-            return service;
-        }
+     
 }

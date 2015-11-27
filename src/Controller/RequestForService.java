@@ -19,8 +19,12 @@ public class RequestForService {
     int serviceID;
     int numberOfRequests;
     String serviceName;
+    
     HashMap _lifeTimeConfig;
     HashMap _requestRateConfig;
+    HashMap _webRequestsArrivalRateConfig;
+    HashMap _localServiceRateConfig;
+    HashMap _cloudServiceRateConfig;
 
     public RequestForService(int providerID, int serviceID,int numberOfRequests,String serviceName) {
         
@@ -28,11 +32,29 @@ public class RequestForService {
         this.serviceID=serviceID;
         this.numberOfRequests=numberOfRequests;
         this.serviceName=serviceName;
+        
         this._lifeTimeConfig=new HashMap();
         this._requestRateConfig=new HashMap();
+        this._webRequestsArrivalRateConfig=new HashMap();
+        this._localServiceRateConfig=new HashMap();
+        this._cloudServiceRateConfig=new HashMap();
                    
     }
 
+    public HashMap getWebRequestsArrivalRateConfig() {
+        return _webRequestsArrivalRateConfig;
+    }
+
+    
+    public HashMap getLocalServiceTimeConfig() {
+        return _localServiceRateConfig;
+    }
+
+    public HashMap getCloudServiceTimeConfig() {
+        return _cloudServiceRateConfig;
+    }
+
+    
     public HashMap getLifeTimeConfig() {
         return _lifeTimeConfig;
     }

@@ -18,24 +18,25 @@ public class VMRequest {
     int slotEnd;
     
     String vmType;
-    String service;
+    String serviceName;
+    int serviceID;
     int lifetime;     //in Slots
    
-  
-    Configuration config;
-    
-    public VMRequest(Configuration config, int providerID, int lifetime) {
+   
+    public VMRequest( int providerID, int serviceID, int lifetime, String serviceName) {
         
-        this.config=config;
         this.providerID = providerID;
         this.lifetime=lifetime;
+        this.serviceID=serviceID;
+        this.serviceName=serviceName;
         id++;
         this.requestID=id;
-        
     
     }
 
-    
+    public int getServiceID() {
+        return serviceID;
+    }
     
     
     public int getProviderID() {
@@ -45,8 +46,6 @@ public class VMRequest {
     public int getRequestID() {
         return requestID;
     }
-
-      
     
 
     public String getVmType() {
@@ -76,13 +75,11 @@ public class VMRequest {
 
    
 
-    public String getServiceType() {
-        return service;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setService(String service) {
-        this.service = service;
-    }
+ 
 
     public int getLifetime() {
         return lifetime;

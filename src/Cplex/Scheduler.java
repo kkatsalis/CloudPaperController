@@ -183,14 +183,17 @@ public class Scheduler {
         // PENALTY MINIMIZATION GETS MORE IMPORTANCE OVER FAIRNESS
         problem = model.sum(problem,model.sum(model.sum(model.prod(pr_expr, data.Omega),fr_expr), y_sum));
         model.addMinimize(problem);
+        
+     
     }
     
     
-    public int[][][][] Run(SchedulerData data) throws IOException {
+    public CplexResponse Run(SchedulerData data) throws IOException {
         
         
         BufferedWriter ios = null;
         BufferedWriter nos = null;
+        double netBenefit=0;
         
         int[][][][] activationMatrix=new int[data.N][data.P][data.V][data.S];
         
@@ -218,7 +221,9 @@ public class Scheduler {
                 System.out.println();
                 System.out.println("Solution status = " + cplex.getStatus());
                 System.out.println();
-                System.out.println(" cost = " + cplex.getObjValue());
+                System.out.println(" cost = " + cplex.getObjValue()); //Netbenefit
+                netBenefit=cplex.getObjValue(); //Netbenefit
+                
                 for (int i = 0; i < data.N; i++) {
                     for (int j=0;j < data.P; j++)
                         for (int v=0;v < data.V; v++)
@@ -264,7 +269,9 @@ public class Scheduler {
         
         System.out.println("Method Call: Cplex Run Called");
         
-        return activationMatrix;
+        CplexResponse response =new CplexResponse(activationMatrix, netBenefit);
+        
+        return response;
     }
     
     public void updateData(SchedulerData data, int[][][][] a)
