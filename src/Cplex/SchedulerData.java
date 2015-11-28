@@ -33,6 +33,9 @@ public class SchedulerData {
     
     Configuration config;
     
+    double[] w; // rent for each virtual machine type
+    
+    
     public SchedulerData(Configuration config)
     {
         this.config=config;
@@ -59,6 +62,16 @@ public class SchedulerData {
     }
     
     private void initializeArrays(){
+        
+        r = new int[P][S];
+        
+        w = new double[V];
+        
+        double priceBase = 0.026;
+        for (int i=0;i<V;i++)
+            w[i] = (i+1)*priceBase;
+        
+        
         
         // 1 - Fairness Weight
         phi = new double[P]; // fairness weight per provider
@@ -130,53 +143,100 @@ public class SchedulerData {
     
     
     
-  public double ksi(int s, int j, int v)
-	{
-		if (v == 0 && s == 0)
-			return 5000*(j+1);
-		else if (v == 0 && s == 1)
-			return 500*(j+1);
-		else if (v == 1 && s == 0)
-			return 10000*(j+1);
-		else if (v == 1 && s == 1)
-			return 1000*(j+1);
-		else if (v == 2 && s == 0)
-			return 20000*(j+1);
-		else if (v == 2 && s == 1)
-			return 5000*(j+1);
-		else
-			return 100*(v+1);
-	}
-    
-    public double[] f(int r, int s, int j, int V)
+    public static double ksi(int s, int j, int v)
     {
-        double[] unitVector = new double[V];
-        
-        if (s == 0)
-        {
-            unitVector[2] = r/20000;
-            unitVector[1] = (r%20000)/10000;
-            unitVector[0] = ((r%20000)%10000)/5000;
-            if (((r%20000)%10000)%5000 != 0)
-                unitVector[0] += 1;
-        } else if (s == 1)
-        {
-            unitVector[2] = r/5000;
-            unitVector[1] = (r%5000)/1000;
-            unitVector[0] = ((r%5000)%1000)/500;
-            if (((r%5000)%1000)%500 != 0)
-                unitVector[0] += 1;
-        }
-        
-        for (int i = 0; i < V; i++) {
-            unitVector[i]=5;
-            
-        }
-        return unitVector;
+        if (v == 0 && s == 0)
+            return 5000*(j+1);
+        else if (v == 0 && s == 1)
+            return 500*(j+1);
+        else if (v == 1 && s == 0)
+            return 10000*(j+1);
+        else if (v == 1 && s == 1)
+            return 1000*(j+1);
+        else if (v == 2 && s == 0)
+            return 20000*(j+1);
+        else if (v == 2 && s == 1)
+            return 5000*(j+1);
+        else
+            return 100*(v+1);
     }
     
     
+     static void myBubbleSort(double [] array, int[] index)
+    {
+        boolean flag = false;
+        
+        while (!flag)
+        {
+            flag = true;
+            for (int i=0;i<array.length-1;i++)
+            {
+                if (array[i] > array[i+1])
+                {
+                    //swap
+                    double tmp = array[i];
+                    array[i] = array[i+1];
+                    array[i+1] = tmp;
+                    
+                    int tm = index[i];
+                    index[i] = index[i+1];
+                    index[i+1] = tm;
+                    flag = false;
+                }
+            }
+        }
+    }
     
+   public static int[] f(SchedulerData data, int s, int j)
+    {
+        int W = -data.r[j][s];
+        
+        System.out.println("Requests: "+W);
+        double v[] = new double[data.V];
+        double w[] = new double[data.V];
+        double weights[] = new double[data.V];
+        int[] indexes = new int[data.V];
+        int[] toReturn = new int[data.V];
+        
+        for (int i=0;i<data.w.length;i++)
+        {
+            v[i] = -data.w[i];
+            w[i] = -ksi(s, j, i);
+            weights[i] = v[i]/w[i];
+            indexes[i] = i;
+        }
+        
+        myBubbleSort(weights, indexes);
+        
+        
+//		for (int i = 0; i < weights.length; i++) {
+//			System.out.println("Weight: "+weights[i]+" for VM: "+indexes[i]);
+//		}
+        
+        double sum = 0;
+        int i = 0;
+        for (; i < weights.length; i++) {
+            while (true)
+            {
+                if (sum+w[indexes[i]] >= W)
+                {
+                    sum += w[indexes[i]];
+                    toReturn[indexes[i]]++;
+                } else
+                {
+                    break;
+                }
+//				System.out.println("Sum: "+sum+" Currently increased index: "+indexes[i]);
+            }
+        }
+        if (sum > W)
+        {
+            sum += w[indexes[i-1]];
+            toReturn[indexes[i-1]]++;
+        }
+        
+        return toReturn;
+    }
     
 }
 

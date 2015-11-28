@@ -52,8 +52,6 @@ public class Controller {
     List<VMStats> _activeVMStats;
     
     WebUtilities _webUtilities;
-   
-    
     DBUtilities _dbUtilities;
     
     Timer _machineStatsTimer;
@@ -66,23 +64,41 @@ public class Controller {
     Provider[] _provider;
     
     
+    int[] vmsRequested;
+    int[] vmsSatisfied;
+    int[] vmsDeleted;
+    int[] smallVmsRequested;
+    int[] smallVmsSatisfied;
+    int[] mediumVmsRequested;
+    int[] mediumVmsSatisfied;
+    int[] largeVmsRequested;
+    int[] largeVmsSatisfied;
+    
+    int[][][][] vmDeactivationMatrix;
+    
     Controller(Host[] hosts,WebClient[] clients, Configuration config, Slot[] slots, DBUtilities dbUtilities,Provider[] _provider) {
         
         this._config=config;
         this._slots=slots;
         this._hosts=hosts;
         this._clients=clients;
-        
         this._webUtilities=new WebUtilities(config);
-      
-        
         this._dbUtilities=dbUtilities;
-        
         this._hostStats=new HostStats[_config.getHostsNumber()];
         this._activeVMStats=new ArrayList<>();
         this._numberOfMachineStatsPerSlot=_config.getNumberOfMachineStatsPerSlot();
         this._cplexData=new SchedulerData(config);
         this._provider =_provider;
+        
+        initializeStatsArrays();
+        
+        int N=_config.getHostsNumber();
+        int P=_config.getProvidersNumber();
+        int V=_config.getVmTypesNumber();
+        int S=_config.getServicesNumber();
+        
+        vmDeactivationMatrix = new int [N][P][V][S]; // D[i][j][v][s]: # of removed VMs of v v for service s of provider j from AP i
+        
     }
     
     void Run(int slot) throws IOException {
@@ -98,7 +114,40 @@ public class Controller {
             SimulatorStats simulatorStatistics=new SimulatorStats(_config.getProvidersNumber());
             
             int[][][] vmRequestMatrix=loadVMRequestMatrix(slot);             //requestMatrix[v][s][p]
-            int[][][][] vmDeactivationMatrix=loadVmDeactivationMatrix(slot);
+            
+            System.out.println("------------------------------------- LoadRequestMatrix - Slot:" +slot);
+            for (int j = 0; j < _config.getProvidersNumber(); j++) {
+                for (int k = 0; k < _config.getVmTypesNumber(); k++) {
+                    for (int l = 0; l < _config.getServicesNumber(); l++) {
+                        System.out.print(vmRequestMatrix[j][k][l]);
+                        
+                    }
+                    System.out.println("");
+                    
+                }
+                
+            }
+            System.out.println("**********************************");
+            
+            prepareVmDeactivationMatrix(slot,vmDeactivationMatrix,simulatorStatistics);
+
+            System.out.println("**********************************");
+
+            System.out.println("vmDeactivationMatrix - Slot:" +slot);
+            for (int i = 0; i < _hosts.length; i++) {
+                for (int j = 0; j < _config.getProvidersNumber(); j++) {
+                    for (int k = 0; k < _config.getVmTypesNumber(); k++) {
+                        for (int l = 0; l < _config.getServicesNumber(); l++) {
+                            System.out.print(vmDeactivationMatrix[i][j][k][l]);
+                            
+                        }
+                         System.out.println("");
+                        
+                    }
+                    
+                }
+            }
+             System.out.println("**********************************");
             
             System.out.println("Method Call: Delete VMs");
             deleteVMs(slot);
@@ -117,7 +166,7 @@ public class Controller {
             int[][][][] activationMatrix=cplexResponse.getActivationMatrix();
             double netBenefit=cplexResponse.getNetBenefit();
             
-            updateStatsObject(vmRequestMatrix,activationMatrix,netBenefit,simulatorStatistics,slot);
+            updateStatisticsObject(vmRequestMatrix,activationMatrix,netBenefit,simulatorStatistics,slot);
             
              System.out.println("MESSAGE: Activation matrix created!");
             
@@ -130,15 +179,40 @@ public class Controller {
             Thread thread;
             
             
+            
+             System.out.println("**********************************");
+
+            System.out.println("ActivationMatrix - Slot:" +slot);
+            for (int i = 0; i < _hosts.length; i++) {
+                for (int j = 0; j < _config.getProvidersNumber(); j++) {
+                    for (int v  = 0; v < _config.getVmTypesNumber(); v++) {
+                        for (int s = 0; s < _config.getServicesNumber(); s++) {
+                            
+                            System.out.print("-"+ activationMatrix[i][j][v][s]+" (i:"+i+" j:"+j+" v:"+v+" s:"+s+")");
+                            
+                        }
+                         System.out.println("");
+                        
+                    }
+                    
+                }
+            }
+             System.out.println("**********************************");
+            
+            
+            
+            
+            
+            
             for (int i = 0; i < _config.getHostsNumber(); i++) {
-                List<VMRequest> vm2CreatePerHost=cplexSolution2VMRequets(slot, _hosts[i].getHostID(),activationMatrix);
+                List<VMRequest> vm2CreatePerHost=cplexSolution2VMRequets(slot, i,activationMatrix);
                 
-                System.out.println("MESSAGE: Provider:"+i+" Bring up: "+vm2CreatePerHost.size()+"VMs");
+                System.out.println("MESSAGE: Host:"+i+" Bring up: "+vm2CreatePerHost.size()+"VMs");
                 
                 for (Iterator iterator = vm2CreatePerHost.iterator(); iterator.hasNext();) {
                     request = (VMRequest) iterator.next();
                     
-                    loadObject=new LoadVM(slot,request,_hosts[i].getNodeName());
+                    loadObject=new LoadVM(slot,request,i,_hosts[i].getNodeName());
                     thread = new Thread(loadObject);
                     thread.start();
                     Thread.sleep(0);
@@ -171,8 +245,6 @@ public class Controller {
         List<VMRequest> listOfRequestedVMs;
         
         String _vmType="";
-        String _serviceType="";
-        int totalVms2Load=0;
         
         for (int p = 0; p < _config.getProvidersNumber(); p++) {
             
@@ -189,20 +261,14 @@ public class Controller {
                 
                 for (int s = 0; s < _config.getServicesNumber(); s++) {
                     
-                    if(s==0)
-                        _serviceType="AB";
-                    else if(s==1)
-                        _serviceType="VLC";
-                    
                     vms2Load=activationMatrix[hostID][p][v][s];
-                    totalVms2Load+=vms2Load;
                     
                     for(Iterator iterator = listOfRequestedVMs.iterator(); iterator.hasNext();) {
                         VMRequest nextRequest = (VMRequest)iterator.next();
                         
-                        if(nextRequest.getServiceName().equals(_serviceType)&nextRequest.getVmType().equals(_vmType))
+                        if(nextRequest.getServiceID()==s&&nextRequest.getVmType().equals(_vmType))
                         {
-                            if(vms2Load>0){
+                            while(vms2Load>0){
                                 vmList2Create.add(nextRequest);
                                 vms2Load--;
                             }
@@ -283,6 +349,7 @@ public class Controller {
             listOfRequestedVMs=_slots[slot].getVmRequests2Activate()[p];
             
             for (VMRequest nextRequest : listOfRequestedVMs) {
+                
                 if(EMachineTypes.small.toString().equals(nextRequest.getVmType()))
                     v=0;
                 else if(EMachineTypes.medium.toString().equals(nextRequest.getVmType()))
@@ -290,10 +357,8 @@ public class Controller {
                 else if(EMachineTypes.large.toString().equals(nextRequest.getVmType()))
                     v=2;
                 
-                if("AB".equals(nextRequest.getServiceName()))
-                    s=0;
-                else if("VLC".equals(nextRequest.getServiceName()))
-                    s=1;
+                s=nextRequest.getServiceID();
+            
                 
                 requestMatrix[p][v][s]++;
             }
@@ -303,18 +368,14 @@ public class Controller {
         return requestMatrix;
     }
     
-    private int[][][][] loadVmDeactivationMatrix(int slot) {
+    private void prepareVmDeactivationMatrix(int slot,int[][][][] deactivationMatrix,SimulatorStats simulatorStatistics) {
         
         int N=_config.getHostsNumber();
         int P=_config.getProvidersNumber();
         int V=_config.getVmTypesNumber();
         int S=_config.getServicesNumber();
-        
+       
         List<VMRequest> vmRequests2RemoveThisSlot=Utilities.findVMequests2RemoveThisSlot(slot,_slots,_config);
-        List<VM> activeVMsThisSlot=Utilities.findActiveVMs(slot, _hosts);
-        
-        
-        int[][][][] deactivationMatrix = new int [N][P][V][S]; // D[i][j][v][s]: # of removed VMs of v v for service s of provider j from AP i
         
         for (int i=0;i<N;i++)
             for (int j=0;j<P;j++)
@@ -333,42 +394,42 @@ public class Controller {
         for (Iterator iterator = vmRequests2RemoveThisSlot.iterator(); iterator.hasNext();) {
             VMRequest next = (VMRequest)iterator.next();
             
-            for (Iterator iterator1 = activeVMsThisSlot.iterator(); iterator1.hasNext();) {
-                VM nextVM = (VM)iterator1.next();
-                
-                if(nextVM.getVmReuestId()==next.getRequestID()){ // then this Vm must be deactivated
+            for (int i = 0; i < _hosts.length; i++) {
+                for (int j = 0; j < _hosts[i].getVMs().size(); j++) {
                     
-                    hostID=Utilities.findHostID(_config, nextVM.getHostname());
-                    providerID=nextVM.getProviderID();
+                    if(_hosts[i].getVMs().get(j).getVmReuestId()==next.getRequestID()&&_hosts[i].getVMs().get(j).isActive()){
+                    
+                    hostID=i;
+                    providerID=next.getProviderID();
+                    serviceID=next.getServiceID();
                     
                     switch (next.getVmType()){
                         case "small":
                             vmTypeID=0;
+                            break;
                         case "medium":
                             vmTypeID=1;
+                            break;
                         case "large":
                             vmTypeID=2;
+                            break;
                     }
                     
-                    switch (next.getServiceName()){
-                        case "AB":
-                            serviceID=0;
-                        case "VLC":
-                            serviceID=1;
-                    }
-                    
+                  
                     deactivationMatrix[hostID][providerID][vmTypeID][serviceID]++;
+                    simulatorStatistics.getVmsDeleted()[providerID]++;
+                    
+                }
+                
+                      
                 }
                 
             }
             
             
-            
-            
-            
         }
         
-        return deactivationMatrix;
+     
     }
     
     private int[][][][] tempScheduler(double[][][] vmRequestMatrix) {
@@ -393,76 +454,126 @@ public class Controller {
         
     }
 
-    private void updateStatsObject(int[][][] vmRequestMatrix, int[][][][] activationMatrix,double netBenefit,SimulatorStats simulatorStatistics,int slot) {
+    private void updateStatisticsObject(int[][][] vmRequestMatrix, int[][][][] activationMatrix,double netBenefit,SimulatorStats simulatorStatistics,int slot) {
         
        
         
-        int smallVMsRequested=0;
-        int smallVMsSatisfied=0;
-        int mediumVMsRequested=0;
-        int mediumVMsSatisfied=0;
-        int largeVMsRequested=0;
-        int largeVMsSatisfied=0;
+        int smallVMsRequestedSlot=0;
+        int smallVMsSatisfiedSlot=0;
+        int mediumVMsRequestedSlot=0;
+        int mediumVMsSatisfiedSlot=0;
+        int largeVMsRequestedSlot=0;
+        int largeVMsSatisfiedSlot=0;
       
         int numberOfRequests=0;
-        int totalNumberOfRequestsRequested=0;
-        int totalNumberOfRequestsSatisfied=0;
+        int totalNumberOfRequestsRequestedSlot=0;
+        int totalNumberOfRequestsSatisfiedSlot=0;
          
         // Update Requested
         for (int p = 0; p < _config.getProvidersNumber(); p++) {
-            smallVMsRequested=0;
-            mediumVMsRequested=0;
-            largeVMsRequested=0;
-           totalNumberOfRequestsRequested=0;
+            smallVMsRequestedSlot=0;
+            mediumVMsRequestedSlot=0;
+            largeVMsRequestedSlot=0;
+            totalNumberOfRequestsRequestedSlot=0;
             
             for (int v = 0; v < _config.vmTypesNumber; v++) {
                 for (int s = 0; s < _config.getServicesNumber(); s++) {
                     numberOfRequests=vmRequestMatrix[p][v][s];
-                    totalNumberOfRequestsRequested+=vmRequestMatrix[p][v][s];
+                    totalNumberOfRequestsRequestedSlot+=vmRequestMatrix[p][v][s];
                     if(v==0)
-                        smallVMsRequested+=numberOfRequests;
+                        smallVMsRequestedSlot+=numberOfRequests;
                     else if(v==1)
-                        mediumVMsRequested+=numberOfRequests;
+                        mediumVMsRequestedSlot+=numberOfRequests;
                      else if(v==2)
-                        largeVMsRequested+=numberOfRequests;
+                        largeVMsRequestedSlot+=numberOfRequests;
                 }
             }
-            simulatorStatistics.getVmsRequested()[p]=totalNumberOfRequestsRequested;
-            simulatorStatistics.getSmallVmsRquested()[p]=smallVMsRequested;
-            simulatorStatistics.getMediumVmsRquested()[p]=mediumVMsRequested;
-            simulatorStatistics.getLargeVmsRquested()[p]=largeVMsRequested;
+            simulatorStatistics.getVmsRequestedSlot()[p]=totalNumberOfRequestsRequestedSlot;
+            simulatorStatistics.getSmallVmsRequestedSlot()[p]=smallVMsRequestedSlot;
+            simulatorStatistics.getMediumVmsRequestedSlot()[p]=mediumVMsRequestedSlot;
+            simulatorStatistics.getLargeVmsRequestedSlot()[p]=largeVMsRequestedSlot;
+            
+            vmsRequested[p]+=totalNumberOfRequestsRequestedSlot;
+            smallVmsRequested[p]+=smallVMsRequestedSlot;
+            mediumVmsRequested[p]+=mediumVMsRequestedSlot;
+            largeVmsRequested[p]+=largeVMsRequestedSlot;
+            
+            simulatorStatistics.getVmsRequested()[p]=vmsRequested[p];
+            simulatorStatistics.getSmallVmsRequested()[p]=smallVmsRequested[p];
+            simulatorStatistics.getMediumVmsRequested()[p]=mediumVmsRequested[p];
+            simulatorStatistics.getLargeVmsRequested()[p]= largeVmsRequested[p];
+            
         }
         
         // Update Satisfied
         
             for (int p = 0; p < _config.getProvidersNumber(); p++) {
-                smallVMsSatisfied=0;
-                mediumVMsSatisfied=0;
-                largeVMsSatisfied=0;
-                totalNumberOfRequestsSatisfied=0;
+                smallVMsSatisfiedSlot=0;
+                mediumVMsSatisfiedSlot=0;
+                largeVMsSatisfiedSlot=0;
+                totalNumberOfRequestsSatisfiedSlot=0;
              
                 for (int i = 0; i < _hosts.length; i++) {
                     for (int v = 0; v < _config.vmTypesNumber; v++) {
                         for (int s = 0; s < _config.getServicesNumber(); s++) {
                             numberOfRequests=activationMatrix[i][p][v][s];
-                            totalNumberOfRequestsSatisfied+=numberOfRequests;
+                            totalNumberOfRequestsSatisfiedSlot+=numberOfRequests;
                             if(v==0)
-                                smallVMsSatisfied+=numberOfRequests;
+                                smallVMsSatisfiedSlot+=numberOfRequests;
                             else if(v==1)
-                                mediumVMsSatisfied+=numberOfRequests;
+                                mediumVMsSatisfiedSlot+=numberOfRequests;
                              else if(v==2)
-                                largeVMsSatisfied+=numberOfRequests;
+                                largeVMsSatisfiedSlot+=numberOfRequests;
                         }
                     }
-                    simulatorStatistics.getVmsSatisfied()[p]=totalNumberOfRequestsSatisfied;
-                    simulatorStatistics.getSmallVmsSatisfied()[p]=smallVMsSatisfied;
-                    simulatorStatistics.getMediumVmsSatisfied()[p]=mediumVMsSatisfied;
-                    simulatorStatistics.getLargeVmsSatisfied()[p]=largeVMsSatisfied;
                     
-                    simulatorStatistics.setNetBenefit(netBenefit);
-                    simulatorStatistics.setSlot(slot);
-            }
+                }
+                
+                simulatorStatistics.getVmsSatisfiedSlot()[p]=totalNumberOfRequestsSatisfiedSlot;
+                simulatorStatistics.getSmallVmsSatisfiedSlot()[p]=smallVMsSatisfiedSlot;
+                simulatorStatistics.getMediumVmsSatisfiedSlot()[p]=mediumVMsSatisfiedSlot;
+                simulatorStatistics.getLargeVmsSatisfiedSlot()[p]=largeVMsSatisfiedSlot;
+
+                vmsSatisfied[p]+=totalNumberOfRequestsSatisfiedSlot;
+                smallVmsSatisfied[p]+=smallVMsSatisfiedSlot;
+                mediumVmsSatisfied[p]+=mediumVMsSatisfiedSlot;
+                largeVmsSatisfied[p]+=largeVMsSatisfiedSlot;
+
+                simulatorStatistics.getVmsSatisfied()[p]=vmsSatisfied[p];
+                simulatorStatistics.getSmallVmsSatisfied()[p]=smallVmsSatisfied[p];
+                simulatorStatistics.getMediumVmsSatisfied()[p]=mediumVmsSatisfied[p];
+                simulatorStatistics.getLargeVmsSatisfied()[p]= largeVmsSatisfied[p];
+
+                simulatorStatistics.setNetBenefit(netBenefit);
+                simulatorStatistics.setSlot(slot);
         }
+    }
+
+    private void initializeStatsArrays() {
+        vmsRequested=new int[_config.getProvidersNumber()];
+        vmsSatisfied=new int[_config.getProvidersNumber()];
+        vmsDeleted=new int[_config.getProvidersNumber()];
+        
+        smallVmsRequested=new int[_config.getProvidersNumber()];
+        smallVmsSatisfied=new int[_config.getProvidersNumber()];
+        mediumVmsRequested=new int[_config.getProvidersNumber()];
+        mediumVmsSatisfied=new int[_config.getProvidersNumber()];
+        largeVmsRequested=new int[_config.getProvidersNumber()];
+        largeVmsSatisfied=new int[_config.getProvidersNumber()];
+        
+        
+        for (int i = 0; i < _config.getProvidersNumber(); i++) {
+            vmsRequested[i]=0;
+            vmsSatisfied[i]=0;
+            vmsDeleted[i]=0;
+            smallVmsRequested[i]=0;
+            smallVmsSatisfied[i]=0;
+            mediumVmsRequested[i]=0;
+            mediumVmsSatisfied[i]=0;
+            largeVmsRequested[i]=0;
+            largeVmsSatisfied[i]=0;
+        }
+ 
     }
     
     class DeleteVM implements Runnable{
@@ -514,18 +625,20 @@ public class Controller {
     public class LoadVM implements Runnable{
         
         private Thread _thread;
-        private final String threadName;
-        private final String hostName;
+        String threadName;
+        String hostName;
         VMRequest request;
         
         public boolean loaded=false;
         int slot;
+        int hostID;
         Hashtable hostVMpair;
         
-        LoadVM(int slot,VMRequest request,String hostName){
+        LoadVM(int slot,VMRequest request,int hostID,String hostName){
             
             this.slot=slot;
             this.hostName=hostName;
+            this.hostID=hostID;
             this.request=request;
             this.threadName = hostName+"-"+request.getRequestID();
             this. hostVMpair=new Hashtable();
@@ -543,7 +656,7 @@ public class Controller {
                 createVM(slot,request,hostName);
                 startVM(request,hostName);
                 */        
-                createVMobject(slot,request,hostName);
+                createVMobject(slot,request,hostID,hostName);
                 
                 Thread.sleep(0);
                 
@@ -607,17 +720,13 @@ public class Controller {
             
         }
         
-        private void createVMobject(int slot, VMRequest request, String hostName) {
+        private void createVMobject(int slot, VMRequest request, int hostID,String hostName) {
             
             Hashtable  vmParameters=Utilities.determineVMparameters(request,hostName);
             
-            for (int i = 0; i < _hosts.length; i++) {
-                if(_hosts[i].getNodeName().equals(hostName))
-                {
-                    _hosts[i].getVMs().add(new VM(vmParameters,request,slot,vmIDs,_hosts[i].getNodeName(),_config));
-                    vmIDs++;
-                }
-            }
+                _hosts[hostID].getVMs().add(new VM(vmParameters,request,slot,vmIDs,hostID,_hosts[hostID].getNodeName(),_config));
+                vmIDs++;
+            
         }
         
     }
@@ -674,6 +783,10 @@ public class Controller {
             _machineStatsTimer.scheduleAtFixedRate(new StatisticsTimer(slot),0 ,60*statsUpdateInterval*1000);
         else if(_config.getSlotDurationMetric().equals(ESlotDurationMetric.hours.toString()))
             _machineStatsTimer.scheduleAtFixedRate(new StatisticsTimer(slot),0 ,3600*statsUpdateInterval*1000);
+    }
+
+    public SchedulerData getCplexData() {
+        return _cplexData;
     }
     
     

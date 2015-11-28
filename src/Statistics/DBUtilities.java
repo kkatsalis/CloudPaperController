@@ -253,16 +253,29 @@ public class DBUtilities {
         String[] data = { 
                     String.valueOf(stats.getSlot()),
                     String.valueOf(providerID),
+                    String.valueOf(stats.getNetBenefit()),
+                    
                     String.valueOf(stats.getVmsRequested()[providerID]),
                     String.valueOf(stats.getVmsSatisfied()[providerID]),
-                    String.valueOf(stats.getSmallVmsRquested()[providerID]),
+                    String.valueOf(stats.getVmsDeleted()[providerID]),
+                    String.valueOf(stats.getSmallVmsRequested()[providerID]),
                     String.valueOf(stats.getSmallVmsSatisfied()[providerID]),
-                    String.valueOf(stats.getMediumVmsRquested()[providerID]),
+                    String.valueOf(stats.getMediumVmsRequested()[providerID]),
                     String.valueOf(stats.getMediumVmsSatisfied()[providerID]),
-                    String.valueOf(stats.getLargeVmsRquested()[providerID]),
+                    String.valueOf(stats.getLargeVmsRequested()[providerID]),
                     String.valueOf(stats.getLargeVmsSatisfied()[providerID]),
                     String.valueOf(stats.getNumberOfActiveVMs()[providerID]),
-                    String.valueOf(stats.getNetBenefit()),
+                  
+                    String.valueOf(stats.getVmsRequestedSlot()[providerID]),
+                    String.valueOf(stats.getVmsSatisfiedSlot()[providerID]),
+                    String.valueOf(stats.getSmallVmsRequestedSlot()[providerID]),
+                    String.valueOf(stats.getSmallVmsSatisfiedSlot()[providerID]),
+                    String.valueOf(stats.getMediumVmsRequestedSlot()[providerID]),
+                    String.valueOf(stats.getMediumVmsSatisfiedSlot()[providerID]),
+                    String.valueOf(stats.getLargeVmsRequestedSlot()[providerID]),
+                    String.valueOf(stats.getLargeVmsSatisfiedSlot()[providerID]),
+                    String.valueOf(stats.getNumberOfActiveVMsSlot()[providerID]),
+                   
 
                     };
                     

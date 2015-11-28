@@ -147,7 +147,7 @@ public class Utilities {
 	
        for (int j=0;j<_config.getProvidersNumber();j++)
 			for (int s = 0; s < _config.getServicesNumber(); s++) {
-				r[j][s] = 100*(j+1)/(s+1);
+				r[j][s] = 1000000*(j+1)/(s+1);
 			}
                 
         System.out.println("Method Call: Find Request Pattern Called");

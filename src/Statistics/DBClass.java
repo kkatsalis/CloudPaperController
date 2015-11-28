@@ -236,18 +236,31 @@ public class DBClass {
         simulatorStatsSchema=new ArrayList<>(); 
         simulatorStatsSchema.add(new OMLMPFieldDef("slot",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("providerID",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("vmsRequested",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("vmsSatisfied",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsRquested",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsSatisfied",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsRquested",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsSatisfied",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsRquested",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsSatisfied",OMLTypes.OML_INT32_VALUE));
-        simulatorStatsSchema.add(new OMLMPFieldDef("numberOfActiveVMs",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("netBenefit",OMLTypes.OML_DOUBLE_VALUE));
         
-          System.out.println("DB message: initializeSimulatorStats Called");
+        // From the beggining of time
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsRequested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsDeleted",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsRequested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsRequested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsRequested",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsSatisfied",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("numberOfActiveVMs",OMLTypes.OML_INT32_VALUE));
+        // Fom this slot
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsRequestedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("vmsSatisfiedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsRquestedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsSatisfiedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsRequestedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("mediumVmsSatisfiedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsRequestedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsSatisfiedSlot",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("numberOfActiveVMsSlot",OMLTypes.OML_INT32_VALUE));
+                
+        System.out.println("DB message: initializeSimulatorStats Called");
     }
     
     public OMLBase getOmlclient() {

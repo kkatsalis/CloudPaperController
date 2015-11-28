@@ -17,6 +17,7 @@ import java.util.List;
 public class VM {
     
     int vmID;
+    int hostID;
     int providerID;
     int serviceID;
     String hostname;
@@ -36,10 +37,10 @@ public class VM {
     Configuration config;
     
     
-    public VM(Hashtable vmParameters, VMRequest request,int vmID, int slot,String hostName,Configuration config) {
+    public VM(Hashtable vmParameters, VMRequest request,int vmID, int slot,int hostID,String hostName,Configuration config) {
         
         this.config=config;
-        
+        this.hostID=hostID;
         this.hostname=hostName;
         
         this.vmID=vmID;
