@@ -9,40 +9,32 @@ package Controller;
  *
  * @author kostas
  */
-public class VMRequest {
-    
+public class ServiceRequest {
+   
     static int id=100;
-    
+   
     int providerID;
-    int vmID;
+    int serviceRequestID;
     int slotStart;
     int slotEnd;
-    
-    String vmType;
     String serviceName;
     int serviceID;
-    int serviceRequestID;
     int lifetime;     //in Slots
    
    
-    public VMRequest( int providerID, int serviceID, int lifetime, String serviceName, int serviceRequestID) {
+    public ServiceRequest( int providerID, int serviceID, int lifetime, String serviceName) {
         
         this.providerID = providerID;
         this.lifetime=lifetime;
         this.serviceID=serviceID;
         this.serviceName=serviceName;
         id++;
-        this.vmID=id;
-        this.serviceRequestID=serviceRequestID;
+        this.serviceRequestID=id;
     
     }
 
     public int getServiceID() {
         return serviceID;
-    }
-
-    public int getServiceRequestID() {
-        return serviceRequestID;
     }
     
     
@@ -50,19 +42,11 @@ public class VMRequest {
         return providerID;
     }
 
-    public int getVmID() {
-        return vmID;
+    public int getServiceRequestID() {
+        return serviceRequestID;
     }
     
 
-    public String getVmType() {
-        return vmType;
-    }
-
-    public void setVmType(String vmType) {
-        this.vmType = vmType;
-        
-    }
 
     public int getSlotStart() {
         return slotStart;
@@ -76,7 +60,7 @@ public class VMRequest {
         return slotEnd;
     }
 
-    public void setSlotEnd(int slotEnd) {
+    public void setSlotRemove(int slotEnd) {
         this.slotEnd = slotEnd;
     }
 

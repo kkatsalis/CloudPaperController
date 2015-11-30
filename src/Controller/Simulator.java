@@ -76,6 +76,8 @@ public class Simulator {
     WebUtilities _webUtility;
     Provider[] _provider;
     FakeWebRequestUtilities _fakeWebUtilities;
+     
+    int[][][] _webRequestPattern;
     
     public Simulator(){
         
@@ -107,7 +109,7 @@ public class Simulator {
         System.out.println("********** End of System Initialization Phase **************");
         System.out.println();
         
-        if (true)
+        if(true)
             this.startClientsRequests();
     }
     
@@ -293,7 +295,9 @@ public class Simulator {
             
         }
         
-        System.out.println("Simulator Initialization: Slot Objects - OK");
+        _webRequestPattern=new int[_config.getNumberOfSlots()][_config.getProvidersNumber()][_config.getServicesNumber()]; 
+        
+         System.out.println("Simulator Initialization: Slot Objects - OK");
         
     }
     
@@ -347,8 +351,8 @@ public class Simulator {
     //Returns the new running slot (this can be also 0)
     private int CreateNewServiceRequest(int providerID,int serviceID, int currentSlot,boolean firstSlot)
     {
-        int slot2AddVM=0;
-        int slot2RemoveVM=0;
+        int slot2AddService=0;
+        int slot2RemoveService=0;
         
         int lifetime=calculateServiceLifeTime(providerID,serviceID);
         String serviceName="";
@@ -364,42 +368,25 @@ public class Simulator {
         else
             slotDistance= calculateSlotsAway(providerID,serviceID);
         
-        slot2AddVM=currentSlot+slotDistance;
-        slot2RemoveVM=slot2AddVM+lifetime;
+        slot2AddService=currentSlot+slotDistance;
+        slot2RemoveService=slot2AddService+lifetime;
         
-        if(slot2AddVM<_config.getNumberOfSlots()){
+        if(slot2AddService<_config.getNumberOfSlots()){
             
+            serviceName=_provider[providerID].getRequestsForService().get(serviceID).getServiceName();
             
-            List<VMRequest> newVmRequest = new ArrayList<>();
+            ServiceRequest newServiceRequest = new ServiceRequest(providerID,serviceID,lifetime,serviceName);
             
-            List<String> vms=determineVMs(_config,providerID,serviceID,_controller.getCplexData());
+            newServiceRequest.setSlotStart(slot2AddService);
+            newServiceRequest.setSlotRemove(slot2RemoveService);
             
-            if(!vms.isEmpty()){
-                
-                int index=0;
-                
-                while(index< vms.size()) {
-                    serviceName=_provider[providerID].getRequestsForService().get(serviceID).getServiceName();
                     
-                    newVmRequest.add(new VMRequest(providerID,serviceID,lifetime,serviceName));
+            _slots[slot2AddService].getServiceRequests2Activate()[providerID].add(newServiceRequest);
                     
+                   
+            if(slot2RemoveService<_config.getNumberOfSlots())
+                _slots[slot2RemoveService].getServiceRequests2Remove()[providerID].add(newServiceRequest);
                     
-                    newVmRequest.get(newVmRequest.size()-1).setSlotStart(slot2AddVM);
-                    newVmRequest.get(newVmRequest.size()-1).setVmType(vms.get(index));
-                    
-                    _slots[slot2AddVM].getVmRequests2Activate()[providerID].add(newVmRequest.get(newVmRequest.size()-1));
-                    
-                    //remove vm during this slot
-                    newVmRequest.get(newVmRequest.size()-1).setSlotEnd(slot2RemoveVM);
-                    
-                    if(slot2RemoveVM<_config.getNumberOfSlots())
-                        _slots[slot2RemoveVM].getVmRequests2Remove()[providerID].add(newVmRequest.get(newVmRequest.size()-1));
-                    
-                    index++;
-                }
-                
-            }
-            
             
         }
         else
@@ -407,32 +394,9 @@ public class Simulator {
         
         
         
-        return slot2AddVM;
+        return slot2AddService;
         
     }
-    
-    private List<String> determineVMs(Configuration _config, int providerID, int serviceID, SchedulerData data) {
-        
-        List<String> vms=new ArrayList<>();
-        
-        int[] _vms=SchedulerData.f(data, providerID, serviceID);
-        
-        for (int i = 0; i < _vms.length; i++) {
-            if(i==0)
-                for (int j = 0; j < _vms[i]; j++)
-                    vms.add("small");
-            else if  (i==1)
-                for (int j = 0; j < _vms[i]; j++)
-                    vms.add("medium");
-            else if(i==2)
-                for (int j = 0; j < _vms[i]; j++)
-                    vms.add("large");
-        }
-        
-        return vms;
-        
-    }
-    
     
     
     private int calculateSlotsAway(int providerID, int serviceID) {
@@ -581,23 +545,24 @@ public class Simulator {
         
         for (int i = 0; i < _slots.length ; i++) {
             
-            System.out.println("------------------- SLOT "+i+" -----------------------------------");
+            System.out.println("---------------- SLOT "+i+" -----------------------------");
             
             for (int j = 0; j < _config.providersNumber; j++) {
-                System.out.println("-----------------TO CREATE for provider "+j+" ------------------");
-                for (VMRequest e : _slots[i].getVmRequests2Activate()[j])
+                
+                System.out.println("------ Provider "+j+" ---------");
+                for (ServiceRequest e : _slots[i].getServiceRequests2Activate()[j])
                 {
-                    System.out.println("Create VM Request ID: "+e.requestID);
+                    System.out.println("Create: "+e.serviceRequestID);
                 }
-                System.out.println("-----------------TO DELETE for provider "+j+" ----------------");
-                for (VMRequest e : _slots[i].getVmRequests2Remove()[j])
+               
+                for (ServiceRequest e : _slots[i].getServiceRequests2Remove()[j])
                 {
-                    System.out.println("Delete VM Request ID: "+e.requestID);
+                    System.out.println("Delete: "+e.serviceRequestID);
                 }
+                
+                System.out.println("");
             }
         }
-        
-        
         
         
         System.out.println("Simulator started! Time instant: " +experimentStart);
@@ -668,7 +633,7 @@ public class Simulator {
             parameter="provider"+providerID+"_service"+j+"_estimatedRequets";
             numberOfRequests=Integer.valueOf((String)property.getProperty(parameter));
             
-            _provider[providerID].getRequestsForService().add(new RequestForService(providerID, j, numberOfRequests, serviceName));
+            _provider[providerID].getRequestsForService().add(new ServiceRequestRates(providerID, j, numberOfRequests, serviceName));
             index=j;
             
             //Rate Configuration
@@ -1043,19 +1008,14 @@ public class Simulator {
             stats.setResponseTime(responseTime);
             _dbUtilities.updateWebClientStatistics2DB(slot, stats);
             
-            //updateServiceRequestPattern();
-            
+            // update Web Requests Statistics Array
+            if(slot<_slots.length){
+                _webRequestPattern[slot][providerID][serviceID]++;
+                
+            }
             
         }
-        
-        private void updateServiceRequestPattern() {
-            //update this objects
-            //_servicePattern
-            
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-        
-        
+   
     }
     
     
@@ -1115,6 +1075,7 @@ public class Simulator {
             try {
                 if(slot<_config.getNumberOfSlots()){
                     
+                    _controller.updateServiceRequestPattern(_webRequestPattern,slot);
                     _controller.Run(slot);
                     
                     slot++;
@@ -1127,6 +1088,7 @@ public class Simulator {
                 }
             }
             catch (IOException ex) {
+                _db.getOmlclient().close();
                 Logger.getLogger(Simulator.class.getName()).log(Level.SEVERE, null, ex);
             }
             

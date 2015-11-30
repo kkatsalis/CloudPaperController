@@ -51,7 +51,7 @@ public class VM {
         this.serviceName = request.getServiceName();
         this.vmType = request.getVmType();
         this.providerID = request.getProviderID();
-        this.vmReuestId=request.getRequestID();
+        this.vmReuestId=request.getVmID();
         
         this.slotActivated=slot;
         

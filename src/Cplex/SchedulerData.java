@@ -58,7 +58,7 @@ public class SchedulerData {
         this.D = D;
         
         System.out.println("Method Call: Update Cplex Parameters Called");
-        
+       
     }
     
     private void initializeArrays(){
@@ -236,6 +236,16 @@ public class SchedulerData {
         }
         
         return toReturn;
+    }
+
+    public void initializeWebRequestMatrix(int[][] _webRequestPattern) {
+        
+        for (int p = 0; p < P; p++) {
+            for (int s = 0; s < S; s++) {
+                r[p][s]=_webRequestPattern[p][s];
+            }
+            
+        }
     }
     
 }

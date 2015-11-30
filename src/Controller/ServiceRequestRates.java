@@ -13,7 +13,7 @@ import java.util.List;
  *
  * @author kostas
  */
-public class RequestForService {
+public class ServiceRequestRates {
     
     int providerID;
     int serviceID;
@@ -26,7 +26,7 @@ public class RequestForService {
     HashMap _localServiceRateConfig;
     HashMap _cloudServiceRateConfig;
 
-    public RequestForService(int providerID, int serviceID,int numberOfRequests,String serviceName) {
+    public ServiceRequestRates(int providerID, int serviceID,int numberOfRequests,String serviceName) {
         
         this.providerID=providerID;
         this.serviceID=serviceID;

@@ -11,7 +11,7 @@ import Controller.Provider;
 import Controller.Slot;
 import Controller.VM;
 import Controller.VMRequest;
-import Controller.RequestForService;
+import Controller.ServiceRequestRates;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -40,9 +40,9 @@ public class Utilities {
     public static Hashtable determineVMparameters(VMRequest vmRequest,String hostName) {
     
         Hashtable parameters=new Hashtable();
-        int y=vmRequest.getRequestID();
+        int y=vmRequest.getVmID();
         
-        String vmName=hostName+"p"+String.valueOf(vmRequest.getProviderID())+"r"+String.valueOf(vmRequest.getRequestID());
+        String vmName=hostName+"p"+String.valueOf(vmRequest.getProviderID())+"r"+String.valueOf(vmRequest.getVmID());
         
         parameters.put("hostName",hostName);
         parameters.put("vmName",vmName);
@@ -140,20 +140,59 @@ public class Utilities {
      }
      
      
-     public static int[][] findRequestPattern(Configuration _config) {
-
-        //Moving Average 
-        int[][] r = new int [_config.getProvidersNumber()][_config.getServicesNumber()]; // requests per service provider
-	
-       for (int j=0;j<_config.getProvidersNumber();j++)
-			for (int s = 0; s < _config.getServicesNumber(); s++) {
-				r[j][s] = 1000000*(j+1)/(s+1);
-			}
+//     public static int[][] findRequestPattern(Configuration _config) {
+//
+//        //Moving Average 
+//        int[][] r = new int [_config.getProvidersNumber()][_config.getServicesNumber()]; // requests per service provider
+//	
+//       for (int j=0;j<_config.getProvidersNumber();j++)
+//			for (int s = 0; s < _config.getServicesNumber(); s++) {
+//				r[j][s] = 1000000*(j+1)/(s+1);
+//			}
+//                
+//        System.out.println("Method Call: Find Request Pattern Called");
+//            return r;
+//            
+//    }
+    
+     public static void print3Array(Configuration _config,int[][][] array, String ArrayName, int slot){
+    
+     System.out.println("-------------------------------------"+ ArrayName +"- Slot:" +slot);
+            for (int j = 0; j < _config.getProvidersNumber(); j++) {
+                for (int k = 0; k < _config.getVmTypesNumber(); k++) {
+                    for (int l = 0; l < _config.getServicesNumber(); l++) {
+                        System.out.print(array[j][k][l]);
+                        
+                    }
+                    System.out.println("");
+                    
+                }
                 
-        System.out.println("Method Call: Find Request Pattern Called");
-            return r;
-            
+            }
+    
+    
     }
-     
+    
+    public static void print4Array(Host[] _hosts,Configuration _config,int[][][][] array, String ArrayName, int slot){
+    
+    System.out.println("**********************************");
+            
+            System.out.println("vmDeactivationMatrix - Slot:" +slot);
+            for (int i = 0; i < _hosts.length; i++) {
+                for (int j = 0; j < _config.getProvidersNumber(); j++) {
+                    for (int k = 0; k < _config.getVmTypesNumber(); k++) {
+                        for (int l = 0; l < _config.getServicesNumber(); l++) {
+                            System.out.print(array[i][j][k][l]);
+                            
+                        }
+                        System.out.println("");
+                        
+                    }
+                    
+                }
+            }
+            System.out.println("**********************************");
+            
+    } 
      
 }

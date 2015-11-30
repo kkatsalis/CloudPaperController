@@ -72,7 +72,12 @@ public class DBClass {
         omlclient.addmp("webClientServiceStatsTable",mp_webClientServiceStats);
         omlclient.addmp("simulatorStatsTable",mp_simulatorStats);
 
-        omlclient.start();
+        try {
+             omlclient.start();
+        } catch (Exception e) {
+              System.out.println(e);   
+        }
+       
         
          System.out.println("********** End of DB Initialization Phase ****************");
          System.out.println();   

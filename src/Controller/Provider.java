@@ -15,14 +15,14 @@ import java.util.List;
 public class Provider {
 
     int providerID;
-    List<RequestForService> requestsForService;
+    List<ServiceRequestRates> requestsForService;
 
     public Provider(int providerID) {
         this.providerID=providerID;
-        requestsForService=new ArrayList<RequestForService>();
+        requestsForService=new ArrayList<ServiceRequestRates>();
     }
 
-    public List<RequestForService> getRequestsForService() {
+    public List<ServiceRequestRates> getRequestsForService() {
         return requestsForService;
     }
     

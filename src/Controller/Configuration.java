@@ -42,7 +42,6 @@ public class Configuration {
     double[] phiWeight;
      
     List<String> cloudVM_IPs=new ArrayList<>();
-    
     List<String> clientNames=new ArrayList<>();
     List<String> hostNames=new ArrayList<>();
     List<String> vmTypesNames=new ArrayList<>();
@@ -64,6 +63,7 @@ public class Configuration {
     int abBatchRequestsNumber=100;
     HashMap associatedAPsPerClient;
     
+    String statsUpdateMethod;
     
     
     public Configuration() {
@@ -208,7 +208,7 @@ public class Configuration {
             omega=Double.valueOf(property.getProperty("omega"));
             cloudVM_number=Integer.valueOf(property.getProperty("cloudVM_number"));
             servicesNumber=Integer.valueOf(property.getProperty("servicesNumber"));
-            
+            statsUpdateMethod=String.valueOf(property.getProperty("stats_updateMethod"));
         }
         catch (Exception e) {
             System.out.println(e.toString());
@@ -521,6 +521,10 @@ public class Configuration {
 
     public List<String> getCloudVM_IPs() {
         return cloudVM_IPs;
+    }
+
+    public String getStatsUpdateMethod() {
+        return statsUpdateMethod;
     }
 
 
