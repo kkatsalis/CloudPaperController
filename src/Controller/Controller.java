@@ -134,11 +134,15 @@ public class Controller {
             // -----------Update Cplex data Parameters
             _cplexData.updateParameters(_webRequestPattern, vmRequestMatrix, vmDeactivationMatrix);
             
-            
+                        
             // ----------- Run Cplex
-            CplexResponse cplexResponse=scheduler.Run(_cplexData);
-            int[][][][] activationMatrix=cplexResponse.getActivationMatrix();
-            // int[][][][] activationMatrix =tempScheduler(vmRequestMatrix); // activationMatrix[i][j][v][s]: # of allocated VMs of v v for service s of provider j at AP i
+            int[][][][] activationMatrix=new int[_cplexData.N][_cplexData.P][_cplexData.V][_cplexData.S];
+            
+            if(_slots[slot].getVmRequests2Activate().length>0)
+                activationMatrix=scheduler.Run(_cplexData);
+           
+            scheduler.updateData(_cplexData, activationMatrix);
+            CplexResponse cplexResponse=updatePenaltyAndUtility(_cplexData, activationMatrix);
             
             // ----------- Update Statistics Object
             double netBenefit=cplexResponse.getNetBenefit();
@@ -281,6 +285,44 @@ public class Controller {
         
         System.out.println("Method Call: Delete VMs Called");
     }
+    
+    private  CplexResponse updatePenaltyAndUtility(SchedulerData data, int[][][][] activationMatrix){
+    
+        double netBenefit=0;
+        double penalty=0;
+        double utility=0;
+     
+        for (int i = 0; i < data.N; i++) 
+        	for (int j=0;j < data.P; j++)
+        		for (int s=0;s < data.S; s++)
+        			for (int v=0;v < data.V; v++)
+        				utility += activationMatrix[i][j][v][s]*data.w[v];
+        
+        penalty=0; //Cost
+
+        for (int j=0;j < data.P; j++)
+        {  
+        	
+        	for (int s=0;s < data.S; s++)
+        	{
+        		double temp =0;
+        		for (int v=0;v < data.V; v++)
+        			for (int i = 0; i < data.N; i++)
+        				temp += data.n[i][j][v][s]*SchedulerData.ksi(s, j, v);
+        		
+        		penalty +=data.r[j][s]-temp*data.pen[j][s];
+        	}
+        	
+        } 
+    	 
+        netBenefit = utility - penalty;
+
+        CplexResponse response =new CplexResponse(activationMatrix, netBenefit, utility, penalty);
+    
+        return response;
+    }
+    
+    
     
     
     private int[][][] loadVMRequestMatrix(int slot) {

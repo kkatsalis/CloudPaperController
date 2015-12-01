@@ -224,14 +224,12 @@ public class Scheduler {
 		model.addMinimize(problem);
 	}
     
- public CplexResponse Run(SchedulerData data) throws IOException {
+ public int[][][][] Run(SchedulerData data) throws IOException {
         
         
         BufferedWriter ios = null;
         BufferedWriter nos = null;
-        double netBenefit=0;
-        double penalty=0;
-        double utility=0;
+       
         
         int[][][][] activationMatrix=new int[data.N][data.P][data.V][data.S];
         
@@ -259,7 +257,7 @@ public class Scheduler {
                 System.out.println();
                 System.out.println("Solution status = " + cplex.getStatus());
                 System.out.println();
-                System.out.println(" cost = " + cplex.getObjValue()); //Netbenefit
+                System.out.println(" cost = " + cplex.getObjValue()); 
               
                 
                 for (int i = 0; i < data.N; i++) {
@@ -296,10 +294,8 @@ public class Scheduler {
                 System.out.println("Solution NOT FOUND");
                 System.out.println("Solution status = " + cplex.getStatus());
             }
-            updateData(data, activationMatrix);
+          //  updateData(data, activationMatrix);
             cplex.end();
-            
-            
             
         }
         catch (IloException ex) {
@@ -307,37 +303,9 @@ public class Scheduler {
         }
         
         System.out.println("Method Call: Cplex Run Called");
+   
         
-        utility=0; //Utility
-
-        for (int i = 0; i < data.N; i++) 
-        	for (int j=0;j < data.P; j++)
-        		for (int s=0;s < data.S; s++)
-        			for (int v=0;v < data.V; v++)
-        				utility += activationMatrix[i][j][v][s]*data.w[v];
-        
-        penalty=0; //Cost
-
-        for (int j=0;j < data.P; j++)
-        {  
-        	
-        	for (int s=0;s < data.S; s++)
-        	{
-        		double temp =0;
-        		for (int v=0;v < data.V; v++)
-        			for (int i = 0; i < data.N; i++)
-        				temp += data.n[i][j][v][s]*SchedulerData.ksi(s, j, v);
-        		
-        		penalty +=data.r[j][s]-temp*data.pen[j][s];
-        	}
-        	
-        } 
-    	 
-        netBenefit = utility - penalty;
-
-        CplexResponse response =new CplexResponse(activationMatrix, netBenefit, utility, penalty);
-        
-        return response;
+        return activationMatrix;
     }
   
     public void updateData(SchedulerData data, int[][][][] a)

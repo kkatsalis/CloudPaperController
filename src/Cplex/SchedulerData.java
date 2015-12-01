@@ -33,7 +33,7 @@ public class SchedulerData {
     
     Configuration config;
     
-    double[] w; // rent for each virtual machine type
+    public double[] w; // rent for each virtual machine type
     
     
     public SchedulerData(Configuration config)
