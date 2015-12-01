@@ -5,18 +5,19 @@
  */
 package Cplex;
 
-/**
- *
- * @author kostas
- */
+
 public class CplexResponse {
     
     int[][][][] activationMatrix;
     double netBenefit;
+    double utility;
+	double cost;
 
-    public CplexResponse(int[][][][] activationMatrix, double netBenefit) {
+    public CplexResponse(int[][][][] activationMatrix, double netBenefit, double utility, double cost) {
         this.activationMatrix = activationMatrix;
         this.netBenefit = netBenefit;
+        this.utility = utility;
+        this.cost = cost;
     }
 
     public int[][][][] getActivationMatrix() {
@@ -27,6 +28,12 @@ public class CplexResponse {
         return netBenefit;
     }
     
-    
-    
+     public double getUtility() {
+		return utility;
+	}
+
+	public double getCost() {
+		return cost;
+    }
 }
+
