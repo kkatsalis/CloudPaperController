@@ -274,9 +274,8 @@ public class DBUtilities {
                     String.valueOf(stats.getMediumVmsSatisfiedSlot()[providerID]),
                     String.valueOf(stats.getLargeVmsRequestedSlot()[providerID]),
                     String.valueOf(stats.getLargeVmsSatisfiedSlot()[providerID]),
-                    String.valueOf(stats.getNumberOfActiveVMsSlot()[providerID]),
+                    String.valueOf(stats.getNumberOfActiveVMsSlot()[providerID])
                    
-
                     };
                     
                     _db.getMp_simulatorStats().inject(data);

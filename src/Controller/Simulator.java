@@ -234,6 +234,7 @@ public class Simulator {
                     
                     parameter="provider"+i+"_service"+j+"_webRequest_lamda";
                     lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getWebRequestsArrivalRateConfig().get(parameter)));
+                    lamda=(double)1/lamda;
                     _webRequestArrivalRateExponentialGenerator[i][j]=new Exponential(lamda);
                     
                 }
@@ -549,7 +550,7 @@ public class Simulator {
             
             for (int j = 0; j < _config.providersNumber; j++) {
                 
-                System.out.println("------ Provider "+j+" ---------");
+              //  System.out.println("------ Provider "+j+" ---------");
                 for (ServiceRequest e : _slots[i].getServiceRequests2Activate()[j])
                 {
                     System.out.println("Create: "+e.serviceRequestID);
@@ -621,8 +622,10 @@ public class Simulator {
         
         // InterArrival Time
         
-        parameter="provider"+providerID+"_servicesNumber";
-        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+//        parameter="provider"+providerID+"_servicesNumber";
+//        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        
+        providerServicesNumber=Integer.valueOf((String)property.getProperty("servicesNumber")); 
         
         for (int j = 0; j < providerServicesNumber; j++) {
             
@@ -702,8 +705,10 @@ public class Simulator {
         
         // InterArrival Time
         
-        parameter="provider"+providerID+"_servicesNumber";
-        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+//        parameter="provider"+providerID+"_servicesNumber";
+//        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+       
+        providerServicesNumber=Integer.valueOf((String)property.getProperty("servicesNumber")); 
         
         for (int j = 0; j < providerServicesNumber; j++) {
             
@@ -775,8 +780,10 @@ public class Simulator {
         
         // InterArrival Time
         
-        parameter="provider"+providerID+"_servicesNumber";
-        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        // parameter="provider"+providerID+"_servicesNumber";
+        // providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        
+        providerServicesNumber=Integer.valueOf((String)property.getProperty("servicesNumber")); 
         
         for (int j = 0; j < providerServicesNumber; j++) {
             
@@ -840,8 +847,10 @@ public class Simulator {
         
         // InterArrival Time
         
-        parameter="provider"+providerID+"_servicesNumber";
-        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        // parameter="provider"+providerID+"_servicesNumber";
+        // providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        
+        providerServicesNumber=Integer.valueOf((String)property.getProperty("servicesNumber")); 
         
         for (int j = 0; j < providerServicesNumber; j++) {
             
@@ -908,8 +917,11 @@ public class Simulator {
         
         // InterArrival Time
         
-        parameter="provider"+providerID+"_servicesNumber";
-        providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        // parameter="provider"+providerID+"_servicesNumber";
+        // providerServicesNumber=Integer.valueOf((String)property.getProperty(parameter));
+        
+        providerServicesNumber=Integer.valueOf((String)property.getProperty("servicesNumber")); 
+        
         
         for (int j = 0; j < providerServicesNumber; j++) {
             

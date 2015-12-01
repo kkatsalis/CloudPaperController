@@ -58,7 +58,7 @@ public class SchedulerData {
         this.D = D;
         
         System.out.println("Method Call: Update Cplex Parameters Called");
-       
+        
     }
     
     private void initializeArrays(){
@@ -162,7 +162,7 @@ public class SchedulerData {
     }
     
     
-     static void myBubbleSort(double [] array, int[] index)
+    static void myBubbleSort(double [] array, int[] index)
     {
         boolean flag = false;
         
@@ -187,57 +187,65 @@ public class SchedulerData {
         }
     }
     
-   public static int[] f(SchedulerData data, int s, int j)
+    public static int[] f(SchedulerData data, int j,int s )
     {
-        int W = -data.r[j][s];
-        
-        System.out.println("Requests: "+W);
-        double v[] = new double[data.V];
-        double w[] = new double[data.V];
-        double weights[] = new double[data.V];
-        int[] indexes = new int[data.V];
-        int[] toReturn = new int[data.V];
-        
-        for (int i=0;i<data.w.length;i++)
-        {
-            v[i] = -data.w[i];
-            w[i] = -ksi(s, j, i);
-            weights[i] = v[i]/w[i];
-            indexes[i] = i;
-        }
-        
-        myBubbleSort(weights, indexes);
-        
-        
+        try {
+            
+            int W = -data.r[j][s];
+            
+            System.out.println("Requests: "+W);
+            double v[] = new double[data.V];
+            double w[] = new double[data.V];
+            double weights[] = new double[data.V];
+            int[] indexes = new int[data.V];
+            int[] toReturn = new int[data.V];
+            
+            for (int i=0;i<data.w.length;i++)
+            {
+                v[i] = -data.w[i];
+                w[i] = -ksi(s, j, i);
+                weights[i] = v[i]/w[i];
+                indexes[i] = i;
+            }
+            
+            myBubbleSort(weights, indexes);
+            
+            
 //		for (int i = 0; i < weights.length; i++) {
 //			System.out.println("Weight: "+weights[i]+" for VM: "+indexes[i]);
 //		}
-        
-        double sum = 0;
-        int i = 0;
-        for (; i < weights.length; i++) {
-            while (true)
-            {
-                if (sum+w[indexes[i]] >= W)
+            
+            double sum = 0;
+            int i = 0;
+            for (; i < weights.length; i++) {
+                while (true)
                 {
-                    sum += w[indexes[i]];
-                    toReturn[indexes[i]]++;
-                } else
-                {
-                    break;
-                }
+                    if (sum+w[indexes[i]] >= W)
+                    {
+                        sum += w[indexes[i]];
+                        toReturn[indexes[i]]++;
+                    } else
+                    {
+                        break;
+                    }
 //				System.out.println("Sum: "+sum+" Currently increased index: "+indexes[i]);
+                }
             }
-        }
-        if (sum > W)
-        {
-            sum += w[indexes[i-1]];
-            toReturn[indexes[i-1]]++;
+            if (sum > W)
+            {
+                sum += w[indexes[i-1]];
+                toReturn[indexes[i-1]]++;
+            }
+            return toReturn;
+            
+        } catch (Exception e) {
+            System.out.println(e.toString());
         }
         
-        return toReturn;
+        
+        return null;
     }
-
+    
     public void initializeWebRequestMatrix(int[][] _webRequestPattern) {
         
         for (int p = 0; p < P; p++) {

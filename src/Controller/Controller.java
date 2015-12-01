@@ -363,7 +363,7 @@ public class Controller {
                         
                         
                         deactivationMatrix[hostID][providerID][vmTypeID][serviceID]++;
-                        simulatorStatistics.getVmsDeleted()[providerID]++;
+                        vmsDeleted[providerID]++;
                         
                     }
                     
@@ -402,8 +402,6 @@ public class Controller {
     
     private void updateDbStatisticsObject(int[][][] vmRequestMatrix, int[][][][] activationMatrix,double netBenefit,SimulatorStats simulatorStatistics,int slot) {
         
-        
-        
         int smallVMsRequestedSlot=0;
         int smallVMsSatisfiedSlot=0;
         int mediumVMsRequestedSlot=0;
@@ -425,19 +423,22 @@ public class Controller {
             for (int v = 0; v < _config.vmTypesNumber; v++) {
                 for (int s = 0; s < _config.getServicesNumber(); s++) {
                     numberOfRequests=vmRequestMatrix[p][v][s];
-                    totalNumberOfRequestsRequestedSlot+=vmRequestMatrix[p][v][s];
+                    
                     if(v==0)
                         smallVMsRequestedSlot+=numberOfRequests;
                     else if(v==1)
                         mediumVMsRequestedSlot+=numberOfRequests;
                     else if(v==2)
                         largeVMsRequestedSlot+=numberOfRequests;
+                    
+                    totalNumberOfRequestsRequestedSlot+=numberOfRequests;
                 }
             }
-            simulatorStatistics.getVmsRequestedSlot()[p]=totalNumberOfRequestsRequestedSlot;
+           
             simulatorStatistics.getSmallVmsRequestedSlot()[p]=smallVMsRequestedSlot;
             simulatorStatistics.getMediumVmsRequestedSlot()[p]=mediumVMsRequestedSlot;
             simulatorStatistics.getLargeVmsRequestedSlot()[p]=largeVMsRequestedSlot;
+            simulatorStatistics.getVmsRequestedSlot()[p]=totalNumberOfRequestsRequestedSlot;
             
             vmsRequested[p]+=totalNumberOfRequestsRequestedSlot;
             smallVmsRequested[p]+=smallVMsRequestedSlot;
@@ -492,6 +493,12 @@ public class Controller {
             
             simulatorStatistics.setNetBenefit(netBenefit);
             simulatorStatistics.setSlot(slot);
+        }
+        
+        // VMs deleted
+        for (int i = 0; i < _config.getProvidersNumber(); i++) {
+            simulatorStatistics.getVmsDeleted()[i]=vmsDeleted[i];
+            
         }
     }
     
