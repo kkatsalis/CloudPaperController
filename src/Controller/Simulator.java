@@ -1051,22 +1051,28 @@ public class Simulator {
         
         List<VM> potentialVMs=new ArrayList<>();
         
+      
         for (Host _host : _hosts) {
             for (Iterator iterator = _host.getVMs().iterator(); iterator.hasNext();) {
                 VM nextVM = (VM)iterator.next();
-                
+
                 if(nextVM.isActive()&nextVM.getProviderID()==providerID&nextVM.getServiceID()==serviceID){
                     potentialVMs.add(nextVM);
                 }
             }
         }
-        
-        if(0==potentialVMs.size()){
+      
+        if(potentialVMs.size()>0){      
+            vmIP=potentialVMs.get(random.nextInt(potentialVMs.size())).getIp();
+            return vmIP;
+            
+        }
+        else if(potentialVMs.isEmpty()){
             return _config.getCloudVM_IPs().get(random.nextInt(_config.getCloudVM_IPs().size()));
         }
         
         
-        vmIP=potentialVMs.get(random.nextInt(potentialVMs.size())).getIp();
+        
         
 //        //Step 3: Find the local VM
 //           for (Iterator iterator = potentialVMs.iterator(); iterator.hasNext();) {
@@ -1075,8 +1081,8 @@ public class Simulator {
 //               if(hostApName.equals(nextVM.getHostname()))
 //                    vmIP=nextVM.getIp();
 //        }
+        return null;
         
-        return vmIP;
     }
     
     

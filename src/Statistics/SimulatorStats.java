@@ -25,7 +25,7 @@ public class SimulatorStats {
     int[] largeVmsSatisfied; //per provider from beggining of time
     int[] numberOfActiveVMs; //per provider from beggining of time
     
-    
+    int[] activeVMsSlot;
     int[] vmsRequestedSlot; //per provider
     int[] vmsSatisfiedSlot; //per provider
     int[] smallVmsRequestedSlot; //per provider
@@ -48,7 +48,8 @@ public class SimulatorStats {
         numberOfActiveVMsSlot=new int[numberOfProviders]; //per provider
         vmsRequestedSlot=new int[numberOfProviders]; //per provider
         vmsSatisfiedSlot=new int[numberOfProviders]; //per provider
-    
+        activeVMsSlot=new int[numberOfProviders]; //per provider
+        
         smallVmsRequested=new int[numberOfProviders]; //per provider
         smallVmsSatisfied=new int[numberOfProviders]; //per provider
         mediumVmsRequested=new int[numberOfProviders]; //per provider
@@ -61,6 +62,11 @@ public class SimulatorStats {
         vmsDeleted=new int[numberOfProviders]; //per provider
     }
 
+    public int[] getActiveVMsSlot() {
+        return activeVMsSlot;
+    }
+
+    
     public int[] getVmsDeleted() {
         return vmsDeleted;
     }

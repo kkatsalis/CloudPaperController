@@ -146,7 +146,7 @@ public class Controller {
             
             // ----------- Update Statistics Object
             double netBenefit=cplexResponse.getNetBenefit();
-            updateDbStatisticsObject(vmRequestMatrix,activationMatrix,netBenefit,simulatorStatistics,slot);
+            updateDbStatisticsObject(vmRequestMatrix,activationMatrix,netBenefit,simulatorStatistics,slot,_cplexData);
             
             for (int i = 0; i < _config.getProvidersNumber(); i++) {
                 _dbUtilities.updateSimulatorStatistics2DB(slot,simulatorStatistics,i);
@@ -442,7 +442,7 @@ public class Controller {
         
     }
     
-    private void updateDbStatisticsObject(int[][][] vmRequestMatrix, int[][][][] activationMatrix,double netBenefit,SimulatorStats simulatorStatistics,int slot) {
+    private void updateDbStatisticsObject(int[][][] vmRequestMatrix, int[][][][] activationMatrix,double netBenefit,SimulatorStats simulatorStatistics,int slot, SchedulerData data) {
         
         int smallVMsRequestedSlot=0;
         int smallVMsSatisfiedSlot=0;
@@ -540,6 +540,10 @@ public class Controller {
         // VMs deleted
         for (int i = 0; i < _config.getProvidersNumber(); i++) {
             simulatorStatistics.getVmsDeleted()[i]=vmsDeleted[i];
+         }
+        
+        for (int i = 0; i < _config.getProvidersNumber(); i++) {
+            simulatorStatistics.getActiveVMsSlot()[i]=findActiveVMs(i, data);
             
         }
     }
@@ -927,5 +931,27 @@ public class Controller {
             System.out.println(e);
         }
     }
+    
+    public int findActiveVMs(int providerID,SchedulerData data){
+    
+        int activeVMs=0;
+        
+            for (int i = 0; i < data.N; i++) {
+                for (int v = 0; v < data.V; v++) {
+                    for (int s = 0; s < data.S; s++) {
+                        
+                        activeVMs+=data.n[i][providerID][v][s];
+                    }
+                   
+                }
+            }
+    
+        return activeVMs;
+    }
+    
+    
+    
+    
+    
     
 }

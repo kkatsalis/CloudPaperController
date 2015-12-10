@@ -266,6 +266,7 @@ public class DBUtilities {
                     String.valueOf(stats.getLargeVmsSatisfied()[providerID]),
                     String.valueOf(stats.getNumberOfActiveVMs()[providerID]),
                   
+                    String.valueOf(stats.getActiveVMsSlot()[providerID]),
                     String.valueOf(stats.getVmsRequestedSlot()[providerID]),
                     String.valueOf(stats.getVmsSatisfiedSlot()[providerID]),
                     String.valueOf(stats.getSmallVmsRequestedSlot()[providerID]),

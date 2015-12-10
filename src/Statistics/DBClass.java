@@ -41,15 +41,15 @@ public class DBClass {
     
         System.out.println("********** DB Initialization Phase ****************");
         
-        omlclient = new OMLBase("katsalis", "katsalis_exp", "katsalis_testapp", "tcp:nitlab.inf.uth.gr:3003");
+        omlclient = new OMLBase("kkatsalis", "katsalis_cloud", "katsalis_cloud", "tcp:nitlab.inf.uth.gr:3003");
         
-        /* Activate in real system
+        // Activate in real system
         initiliazeHostDBTableSchema();
         initiliazeHostInterfaceDBTableSchema();
         initiliazeVMInterfaceDBTableSchema();
         initiliazeVMBTableSchema();
         initiliazeWebClientABTableSchema();
-         */
+         
         initiliazeWebClientServiceTableSchema();
         initializeSimulatorStats();
                 
@@ -255,6 +255,7 @@ public class DBClass {
         simulatorStatsSchema.add(new OMLMPFieldDef("largeVmsSatisfied",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("numberOfActiveVMs",OMLTypes.OML_INT32_VALUE));
         // Fom this slot
+        simulatorStatsSchema.add(new OMLMPFieldDef("activeVMsSlot",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("vmsRequestedSlot",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("vmsSatisfiedSlot",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("smallVmsRquestedSlot",OMLTypes.OML_INT32_VALUE));
