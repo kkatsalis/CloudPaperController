@@ -5,6 +5,7 @@
  */
 package Statistics;
 
+import Controller.Configuration;
 import Controller.Host;
 import Utilities.WebUtilities;
 import java.io.IOException;
@@ -25,11 +26,14 @@ public class DBUtilities {
     Host[] _hosts;
     WebUtilities _webUtilities;
 
-    public DBUtilities(Host[] _hosts, WebUtilities _webUtilities,DBClass db) {
+    Configuration _config;
+    
+    public DBUtilities(Host[] _hosts, WebUtilities _webUtilities,DBClass db,Configuration config) {
         
         this._db = db;
         this._hosts = _hosts;
         this._webUtilities = _webUtilities;
+        _config=config;
     }
      
     
@@ -81,7 +85,8 @@ public class DBUtilities {
         
         for (int i = 0; i < _hosts.length; i++) {
               
-            String[] data = { 
+            String[] data = {
+                            
                 String.valueOf(slot),
                 String.valueOf(_currentInstance),
                 _hosts[i].getHostStats().getTime(),
@@ -107,6 +112,7 @@ public class DBUtilities {
             _db.getMp_hostStats().inject(data);
     
         }
+    
     
     
     
@@ -251,6 +257,10 @@ public class DBUtilities {
      
          
         String[] data = { 
+              
+                    String.valueOf(_config.getSimulationID()),
+                    String.valueOf(_config.getAlgorithm()),
+                
                     String.valueOf(stats.getSlot()),
                     String.valueOf(providerID),
                     String.valueOf(stats.getNetBenefit()),
@@ -287,6 +297,10 @@ public class DBUtilities {
      public void updateWebClientStatistics2DB(int slot, WebRequestStats stats){
      
         String[] data = { 
+            
+                    String.valueOf(_config.getSimulationID()),
+                    String.valueOf(_config.getAlgorithm()),
+                
                     String.valueOf(stats.getSlot()),
                     String.valueOf(stats.getClientID()),       
                     String.valueOf(stats.getProviderID()),

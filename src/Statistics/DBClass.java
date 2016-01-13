@@ -226,6 +226,9 @@ public class DBClass {
         
         webClientServiceStatsSchema=new ArrayList<>();
         
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("id",OMLTypes.OML_INT32_VALUE));
+        webClientServiceStatsSchema.add(new OMLMPFieldDef("algorithm",OMLTypes.OML_STRING_VALUE));
+          
         webClientServiceStatsSchema.add(new OMLMPFieldDef("slot",OMLTypes.OML_INT32_VALUE));
         webClientServiceStatsSchema.add(new OMLMPFieldDef("clientID",OMLTypes.OML_STRING_VALUE));
         webClientServiceStatsSchema.add(new OMLMPFieldDef("providerID",OMLTypes.OML_INT32_VALUE));
@@ -239,6 +242,10 @@ public class DBClass {
     private void initializeSimulatorStats() {
     
         simulatorStatsSchema=new ArrayList<>(); 
+        
+        simulatorStatsSchema.add(new OMLMPFieldDef("id",OMLTypes.OML_INT32_VALUE));
+        simulatorStatsSchema.add(new OMLMPFieldDef("algorithm",OMLTypes.OML_STRING_VALUE));
+        
         simulatorStatsSchema.add(new OMLMPFieldDef("slot",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("providerID",OMLTypes.OML_INT32_VALUE));
         simulatorStatsSchema.add(new OMLMPFieldDef("netBenefit",OMLTypes.OML_DOUBLE_VALUE));

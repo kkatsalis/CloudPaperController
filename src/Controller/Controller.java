@@ -138,9 +138,16 @@ public class Controller {
             // ----------- Run Cplex
             int[][][][] activationMatrix=new int[_cplexData.N][_cplexData.P][_cplexData.V][_cplexData.S];
             
-            if(_slots[slot].getVmRequests2Activate().length>0)
-                activationMatrix=scheduler.Run(_cplexData);
+            if(_slots[slot].getVmRequests2Activate().length>0){
+                
+                if("ff".equals(_config.getAlgorithm()))
+                    activationMatrix=scheduler.RunFF(_cplexData);
+                else 
+                    activationMatrix=scheduler.Run(_cplexData);
+                
+            }
            
+            
             scheduler.updateData(_cplexData, activationMatrix);
             CplexResponse cplexResponse=updatePenaltyAndUtility(_cplexData, activationMatrix);
             

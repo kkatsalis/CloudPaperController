@@ -90,7 +90,7 @@ public class Simulator {
         
         this._webUtility=new WebUtilities(_config);
         this._db=new DBClass();
-        this._dbUtilities=new DBUtilities(_hosts, _webUtility,_db);
+        this._dbUtilities=new DBUtilities(_hosts, _webUtility,_db,_config);
         
         System.out.println("********** System Initialization Phase ****************");
         

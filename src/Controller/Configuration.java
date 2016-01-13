@@ -34,6 +34,7 @@ public class Configuration {
     int machineResourcesNumber;
     int cloudVM_number;
     
+    String algorithm;
     String nitosServer;
     int slotDuration;
     String slotDurationMetric;
@@ -199,6 +200,7 @@ public class Configuration {
             providersNumber=Integer.valueOf(property.getProperty("providers"));
             numberOfSlots=Integer.valueOf(property.getProperty("slots"));
             nitosServer=String.valueOf(property.getProperty("server"));
+            algorithm=String.valueOf(property.getProperty("algorithm"));
             slotDuration=Integer.valueOf(property.getProperty("slotDuration"));
             slotDurationMetric=String.valueOf(property.getProperty("slotDurationMetric"));
             numberOfMachineStatsPerSlot=Integer.valueOf(property.getProperty("numberOfMachineStatsPerSlot"));
@@ -525,6 +527,10 @@ public class Configuration {
 
     public String getStatsUpdateMethod() {
         return statsUpdateMethod;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
     }
 
 
