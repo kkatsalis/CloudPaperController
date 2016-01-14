@@ -155,44 +155,5 @@ public class Utilities {
 //            
 //    }
     
-     public static void print3Array(Configuration _config,int[][][] array, String ArrayName, int slot){
-    
-     System.out.println("-------------------------------------"+ ArrayName +"- Slot:" +slot);
-            for (int j = 0; j < _config.getProvidersNumber(); j++) {
-                for (int k = 0; k < _config.getVmTypesNumber(); k++) {
-                    for (int l = 0; l < _config.getServicesNumber(); l++) {
-                        System.out.print(array[j][k][l]);
-                        
-                    }
-                    System.out.println("");
-                    
-                }
-                
-            }
-    
-    
-    }
-    
-    public static void print4Array(Host[] _hosts,Configuration _config,int[][][][] array, String ArrayName, int slot){
-    
-    System.out.println("**********************************");
-            
-            System.out.println("vmDeactivationMatrix - Slot:" +slot);
-            for (int i = 0; i < _hosts.length; i++) {
-                for (int j = 0; j < _config.getProvidersNumber(); j++) {
-                    for (int k = 0; k < _config.getVmTypesNumber(); k++) {
-                        for (int l = 0; l < _config.getServicesNumber(); l++) {
-                            System.out.print(array[i][j][k][l]);
-                            
-                        }
-                        System.out.println("");
-                        
-                    }
-                    
-                }
-            }
-            System.out.println("**********************************");
-            
-    } 
      
 }

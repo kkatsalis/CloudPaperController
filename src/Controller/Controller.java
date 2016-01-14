@@ -16,12 +16,14 @@ import Statistics.HostStats;
 import Statistics.NetRateStats;
 import Cplex.Scheduler;
 import Cplex.SchedulerData;
+import Enumerators.EAlgorithms;
 import Enumerators.EStatsUpdateMethod;
 import Statistics.SimulatorStats;
 import Utilities.FakeWebRequestUtilities;
 import Utilities.Utilities;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -119,11 +121,12 @@ public class Controller {
             
             // ----------- Load VM Request Matrix
             int[][][] vmRequestMatrix=loadVMRequestMatrix(slot);             //requestMatrix[v][s][p]
-            Utilities.print3Array(_config, vmRequestMatrix, "vmRequestMatrix", slot);
+            System.out.println(Arrays.deepToString(vmRequestMatrix));
+           
             
             // ----------- Load VM Deactivation Matrix
             prepareVmDeactivationMatrix(slot,vmDeactivationMatrix,simulatorStatistics);
-            Utilities.print4Array(_hosts,_config, vmDeactivationMatrix, "vmDeactivationMatrix", slot);
+             System.out.println(Arrays.deepToString(vmDeactivationMatrix));
             
             // -----------delete VMs
             deleteVMs(slot);
@@ -140,8 +143,10 @@ public class Controller {
             
             if(_slots[slot].getVmRequests2Activate().length>0){
                 
-                if("ff".equals(_config.getAlgorithm()))
+                if((_config.getAlgorithm()).equals(EAlgorithms.FF.toString()))
                     activationMatrix=scheduler.RunFF(_cplexData);
+                else if((_config.getAlgorithm()).equals(EAlgorithms.FFRR.toString()))
+                    activationMatrix=scheduler.RunFFRR(_cplexData);
                 else 
                     activationMatrix=scheduler.Run(_cplexData);
                 
@@ -164,8 +169,6 @@ public class Controller {
             VMRequest request=null;
             LoadVM loadObject;
             Thread thread;
-            
-            Utilities.print4Array(_hosts, _config, activationMatrix, " activationMatrix", slot);
             
             
             for (int i = 0; i < _config.getHostsNumber(); i++) {

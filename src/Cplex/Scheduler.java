@@ -15,6 +15,7 @@ import ilog.cplex.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Hashtable;
 
 public class Scheduler {
@@ -319,52 +320,66 @@ public class Scheduler {
 
     }
 
+    public int[][][][] RunFFRR(SchedulerData data) {
+
+        int[][][][] activationMatrix = new int[data.N][data.P][data.V][data.S];
+
+        int[][] reservedResources;
+
+        int vmsNumber = 0;
+        boolean checkIfFits = false;
+
+        
+            for (int v = 0; v < data.V; v++) {
+                for (int s = 0; s < data.S; s++) {
+                    
+                    for (int p = 0; p < data.P; p++) {
+                    
+                        vmsNumber = data.A[p][v][s];
+
+                        int vmsNumberExamined=0;
+                    
+                        while (vmsNumberExamined < vmsNumber) {
+                        
+                        reservedResources = updateReservedResources(data, activationMatrix);
+
+                        for (int n = 0; n < data.N; n++) {
+                             checkIfFits = checkIftheVMFits(data,reservedResources, v, n);
+                             
+                             if(checkIfFits){
+                                activationMatrix[n][p][v][s]++;    
+                                break;
+                             }
+                        }
+                        
+                        vmsNumberExamined++;
+                       
+                    }
+
+                }
+
+            }
+
+        }
+
+        return activationMatrix;
+
+    }
+    
+    
     public void updateData(SchedulerData data, int[][][][] a) {
         double[][] y = new double[data.N][data.R];
         double[][] Q = new double[data.N][data.R];
 
         System.out.println("------------------------------------Matrix to ACTIVATE-----------------------------------------------");
-        for (int i = 0; i < data.N; i++) {
-            for (int j = 0; j < data.P; j++) {
-                for (int v = 0; v < data.V; v++) {
-                    for (int s = 0; s < data.S; s++) {
-
-                        System.out.print(a[i][j][v][s]);
-                    }
-                    System.out.println();
-                }
-            }
-        }
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-
+        System.out.println(Arrays.deepToString(a));
+        
         System.out.println("------------------------------------Matrix to DELETE-----------------------------------------------");
-        for (int i = 0; i < data.N; i++) {
-            for (int j = 0; j < data.P; j++) {
-                for (int v = 0; v < data.V; v++) {
-                    for (int s = 0; s < data.S; s++) {
-
-                        System.out.print(data.D[i][j][v][s]);
-                    }
-                    System.out.println();
-                }
-            }
-        }
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-
+        System.out.println(Arrays.deepToString(data.D));
+        
         System.out.println("------------------------------------N Matrix BEFORE DELETION-----------------------------------------------");
-        for (int i = 0; i < data.N; i++) {
-            for (int j = 0; j < data.P; j++) {
-                for (int v = 0; v < data.V; v++) {
-                    for (int s = 0; s < data.S; s++) {
-
-                        System.out.print(data.n[i][j][v][s]);
-                    }
-                    System.out.println();
-                }
-            }
-        }
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-
+        System.out.println(Arrays.deepToString(data.n));
+        
         for (int i = 0; i < data.N; i++) {
             for (int k = 0; k < data.R; k++) {
                 double ssum = 0;
@@ -403,19 +418,10 @@ public class Scheduler {
         }
 
         System.out.println("------------------------------------N Matrix AFTER DELETION-----------------------------------------------");
-        for (int i = 0; i < data.N; i++) {
-            for (int j = 0; j < data.P; j++) {
-                for (int v = 0; v < data.V; v++) {
-                    for (int s = 0; s < data.S; s++) {
-
-                        System.out.print(data.n[i][j][v][s]);
-                    }
-                    System.out.println();
-                }
-            }
-        }
-        System.out.println("--------------------------------------------------------------------------------------------------------");
-    }
+        
+         System.out.println(Arrays.deepToString(data.n));
+        
+     }
 
     private int[][] updateReservedResources(SchedulerData data, int[][][][] activationMatrix) {
 
