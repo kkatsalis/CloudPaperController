@@ -308,6 +308,8 @@ public class Controller {
         			for (int v=0;v < data.V; v++)
         				utility += activationMatrix[i][j][v][s]*data.w[v];
         
+        System.out.println(Arrays.deepToString(activationMatrix));
+        
         penalty=0; //Cost
 
         for (int j=0;j < data.P; j++)
@@ -320,13 +322,20 @@ public class Controller {
         			for (int i = 0; i < data.N; i++)
         				temp += data.n[i][j][v][s]*SchedulerData.ksi(s, j, v);
         		
-        		penalty +=data.r[j][s]-temp*data.pen[j][s];
+        		penalty +=Math.max((data.r[j][s]-temp),0)*data.pen[j][s];
         	}
-        	
         } 
     	 
         netBenefit = utility - penalty;
 
+         System.out.println();
+         System.out.println();
+         System.out.println();
+         
+        System.out.println("**** utility: "+utility);
+        System.out.println();
+        System.out.println();
+        System.out.println();
         CplexResponse response =new CplexResponse(activationMatrix, netBenefit, utility, penalty);
     
         return response;

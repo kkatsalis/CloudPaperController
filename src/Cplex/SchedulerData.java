@@ -6,6 +6,7 @@
 package Cplex;
 
 import Controller.Configuration;
+import java.util.Arrays;
 
 /**
  *
@@ -45,6 +46,8 @@ public class SchedulerData {
         this.N = config.getHostsNumber();
         this.R = config.getMachineResourcesNumber();
         
+         r = new int[P][S];
+         w = new double[V];
         
         this.Omega=config.getOmega();
         
@@ -61,16 +64,15 @@ public class SchedulerData {
         
     }
     
-    private void initializeArrays(){
-        
-        r = new int[P][S];
-        
-        w = new double[V];
+    public void initializeArrays(){
         
         double priceBase = 0.026;
-        for (int i=0;i<V;i++)
-            w[i] = (i+1)*priceBase;
         
+        for (int i=0;i<V;i++){
+            w[i] = (i+1)*priceBase;
+           System.out.println(w[i]);
+        
+        }
         
         
         // 1 - Fairness Weight
