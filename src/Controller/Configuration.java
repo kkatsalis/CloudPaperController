@@ -41,7 +41,9 @@ public class Configuration {
     int numberOfMachineStatsPerSlot;
     
     double[] phiWeight;
-     
+    double priceBase;
+    
+    
     List<String> cloudVM_IPs=new ArrayList<>();
     List<String> clientNames=new ArrayList<>();
     List<String> hostNames=new ArrayList<>();
@@ -211,6 +213,8 @@ public class Configuration {
             cloudVM_number=Integer.valueOf(property.getProperty("cloudVM_number"));
             servicesNumber=Integer.valueOf(property.getProperty("servicesNumber"));
             statsUpdateMethod=String.valueOf(property.getProperty("stats_updateMethod"));
+            
+            priceBase=Double.valueOf(property.getProperty("priceBase"));
         }
         catch (Exception e) {
             System.out.println(e.toString());
@@ -531,6 +535,10 @@ public class Configuration {
 
     public String getAlgorithm() {
         return algorithm;
+    }
+
+    public double getPriceBase() {
+        return priceBase;
     }
 
 

@@ -1048,7 +1048,9 @@ public class Simulator {
         }
         
         //Step 2: Find all the VMs that can be used
-        
+        try {
+            
+       
         List<VM> potentialVMs=new ArrayList<>();
         
       
@@ -1081,6 +1083,12 @@ public class Simulator {
 //               if(hostApName.equals(nextVM.getHostname()))
 //                    vmIP=nextVM.getIp();
 //        }
+        
+         } catch (Exception e) {
+             System.out.println(e);
+             System.exit(0);
+        }
+        
         return null;
         
     }

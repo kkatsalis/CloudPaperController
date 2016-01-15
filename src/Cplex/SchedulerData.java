@@ -66,7 +66,7 @@ public class SchedulerData {
     
     public void initializeArrays(){
         
-        double priceBase = 0.026;
+        double priceBase = config.getPriceBase();
         
         for (int i=0;i<V;i++){
             w[i] = (i+1)*priceBase;
