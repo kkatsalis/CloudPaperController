@@ -322,7 +322,7 @@ public class Controller {
         		double temp =0;
         		for (int v=0;v < data.V; v++)
         			for (int i = 0; i < data.N; i++)
-        				temp += data.n[i][j][v][s]*SchedulerData.ksi(s, j, v);
+        				temp += data.n[i][j][v][s]*data.ksi(s, j, v);
         		
         		penalty +=Math.max((data.r[j][s]-temp),0)*data.pen[j][s];
         	}
@@ -878,7 +878,7 @@ public class Controller {
         
         List<String> vms=new ArrayList<>();
         
-        int[] _vms=SchedulerData.f(data, providerID, serviceID);
+        int[] _vms=data.f(data, providerID, serviceID);
         
         for (int i = 0; i < _vms.length; i++) {
             if(i==0)

@@ -145,22 +145,27 @@ public class SchedulerData {
     
     
     
-    public static double ksi(int s, int j, int v)
+    public double ksi(int s, int j, int v)
     {
-        if (v == 0 && s == 0)
-            return 5000*(j+1);
-        else if (v == 0 && s == 1)
-            return 500*(j+1);
-        else if (v == 1 && s == 0)
-            return 10000*(j+1);
-        else if (v == 1 && s == 1)
-            return 1000*(j+1);
-        else if (v == 2 && s == 0)
-            return 20000*(j+1);
-        else if (v == 2 && s == 1)
-            return 5000*(j+1);
-        else
-            return 100*(v+1);
+        
+        double xi=config.getXi()[j][v][s];
+            
+        return xi;
+         
+//        if (v == 0 && s == 0)
+//            return 5000*(j+1);
+//        else if (v == 0 && s == 1)
+//            return 500*(j+1);
+//        else if (v == 1 && s == 0)
+//            return 10000*(j+1);
+//        else if (v == 1 && s == 1)
+//            return 1000*(j+1);
+//        else if (v == 2 && s == 0)
+//            return 20000*(j+1);
+//        else if (v == 2 && s == 1)
+//            return 5000*(j+1);
+//        else
+//            return 100*(v+1);
     }
     
     
@@ -189,7 +194,7 @@ public class SchedulerData {
         }
     }
     
-    public static int[] f(SchedulerData data, int j,int s )
+    public int[] f(SchedulerData data, int j,int s )
     {
         try {
             
