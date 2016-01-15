@@ -13,5 +13,6 @@ package Enumerators;
 public enum EAlgorithms {
     FF,
     FFRR,
+    FFRandom,
     Lyapunov
 }

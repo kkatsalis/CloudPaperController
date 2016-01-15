@@ -7,8 +7,10 @@
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Utilities/Utilities.java</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Controller/Simulator.java</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Statistics/DBClass.java</file>
+            <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Cplex/SchedulerData.java</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Enumerators/EAlgorithms.java</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Controller/Controller.java</file>
+            <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Cplex/CplexResponse.java</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/simulation.properties</file>
             <file>file:/home/kostas/NetBeansProjects/mccController2015/mccController2015/src/Enumerators/EGeneratorType.java</file>
         </group>

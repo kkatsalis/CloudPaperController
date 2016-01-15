@@ -10,6 +10,8 @@ package Cplex;
  * @author kostas
  */
 import Controller.Configuration;
+import Utilities.Utilities;
+import Utilities.VmRequestStruct;
 import ilog.concert.*;
 import ilog.cplex.*;
 import java.io.BufferedWriter;
@@ -17,6 +19,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Random;
 
 public class Scheduler {
 
@@ -196,7 +200,7 @@ public class Scheduler {
         model.addMinimize(problem);
     }
 
-    public int[][][][] Run(SchedulerData data) throws IOException {
+    public int[][][][] RunLyapunov(SchedulerData data) throws IOException {
 
         BufferedWriter ios = null;
         BufferedWriter nos = null;
@@ -275,8 +279,6 @@ public class Scheduler {
     // data.m // m[vmtype][res]: amount of each res res for each VM vmtype vmtype
     // data.p // p[host][res]: capacity of each res res at each AP host
     // data.A // A[j][vmtype][s]: # of new requests for VMs of vmtype vmtype for service s of provider j  
-        
-    
     public int[][][][] RunFF(SchedulerData data) {
 
         int[][][][] activationMatrix = new int[data.N][data.P][data.V][data.S];
@@ -291,23 +293,23 @@ public class Scheduler {
                 for (int s = 0; s < data.S; s++) {
                     vmsNumber = data.A[p][v][s];
 
-                    int vmsNumberExamined=0;
-                    
+                    int vmsNumberExamined = 0;
+
                     while (vmsNumberExamined < vmsNumber) {
-                        
+
                         reservedResources = updateReservedResources(data, activationMatrix);
 
                         for (int n = 0; n < data.N; n++) {
-                             checkIfFits = checkIftheVMFits(data,reservedResources, v, n);
-                             
-                             if(checkIfFits){
-                                activationMatrix[n][p][v][s]++;    
+                            checkIfFits = checkIftheVMFits(data, reservedResources, v, n);
+
+                            if (checkIfFits) {
+                                activationMatrix[n][p][v][s]++;
                                 break;
-                             }
+                            }
                         }
-                        
+
                         vmsNumberExamined++;
-                       
+
                     }
 
                 }
@@ -329,31 +331,30 @@ public class Scheduler {
         int vmsNumber = 0;
         boolean checkIfFits = false;
 
-        
-            for (int v = 0; v < data.V; v++) {
-                for (int s = 0; s < data.S; s++) {
-                    
-                    for (int p = 0; p < data.P; p++) {
-                    
-                        vmsNumber = data.A[p][v][s];
+        for (int v = 0; v < data.V; v++) {
+            for (int s = 0; s < data.S; s++) {
 
-                        int vmsNumberExamined=0;
-                    
-                        while (vmsNumberExamined < vmsNumber) {
-                        
+                for (int p = 0; p < data.P; p++) {
+
+                    vmsNumber = data.A[p][v][s];
+
+                    int vmsNumberExamined = 0;
+
+                    while (vmsNumberExamined < vmsNumber) {
+
                         reservedResources = updateReservedResources(data, activationMatrix);
 
                         for (int n = 0; n < data.N; n++) {
-                             checkIfFits = checkIftheVMFits(data,reservedResources, v, n);
-                             
-                             if(checkIfFits){
-                                activationMatrix[n][p][v][s]++;    
+                            checkIfFits = checkIftheVMFits(data, reservedResources, v, n);
+
+                            if (checkIfFits) {
+                                activationMatrix[n][p][v][s]++;
                                 break;
-                             }
+                            }
                         }
-                        
+
                         vmsNumberExamined++;
-                       
+
                     }
 
                 }
@@ -365,21 +366,51 @@ public class Scheduler {
         return activationMatrix;
 
     }
-    
-    
+
+    public int[][][][] RunFF_Random(SchedulerData data) {
+
+        int[][][][] activationMatrix = new int[data.N][data.P][data.V][data.S];
+
+        int[][] reservedResources;
+
+        int vmsNumber = 0;
+        boolean checkIfFits = false;
+
+        List<VmRequestStruct> list = Utilities.transformReqeustMatrixToRandomList(data.A, data.P, data.V, data.S);
+
+        for (VmRequestStruct vmRequestStruct : list) {
+
+            reservedResources = updateReservedResources(data, activationMatrix);
+
+            for (int n = 0; n < data.N; n++) {
+                checkIfFits = checkIftheVMFits(data, reservedResources, vmRequestStruct.getVm(), n);
+
+                if (checkIfFits) {
+                    activationMatrix[n][vmRequestStruct.getProviderID()][vmRequestStruct.getVm()][vmRequestStruct.getService()]++;
+                    break;
+                }
+            }
+
+        }
+      
+
+        return activationMatrix;
+
+    }
+
     public void updateData(SchedulerData data, int[][][][] a) {
         double[][] y = new double[data.N][data.R];
         double[][] Q = new double[data.N][data.R];
 
         System.out.println("------------------------------------Matrix to ACTIVATE-----------------------------------------------");
         System.out.println(Arrays.deepToString(a));
-        
+
         System.out.println("------------------------------------Matrix to DELETE-----------------------------------------------");
         System.out.println(Arrays.deepToString(data.D));
-        
+
         System.out.println("------------------------------------N Matrix BEFORE DELETION-----------------------------------------------");
         System.out.println(Arrays.deepToString(data.n));
-        
+
         for (int i = 0; i < data.N; i++) {
             for (int k = 0; k < data.R; k++) {
                 double ssum = 0;
@@ -418,10 +449,10 @@ public class Scheduler {
         }
 
         System.out.println("------------------------------------N Matrix AFTER DELETION-----------------------------------------------");
-        
-         System.out.println(Arrays.deepToString(data.n));
-        
-     }
+
+        System.out.println(Arrays.deepToString(data.n));
+
+    }
 
     private int[][] updateReservedResources(SchedulerData data, int[][][][] activationMatrix) {
 
@@ -446,28 +477,30 @@ public class Scheduler {
         return hostReservedResources;
     }
 
-    private boolean checkIftheVMFits(SchedulerData data,int[][] reservedResources, int v, int n) {
+    private boolean checkIftheVMFits(SchedulerData data, int[][] reservedResources, int v, int n) {
 
         boolean fits;
 
-        boolean[] fitsArray=new boolean[data.R]; 
-        int resourceCost=0;
-        
+        boolean[] fitsArray = new boolean[data.R];
+        int resourceCost = 0;
+
         for (int r = 0; r < data.R; r++) {
-            
-            fitsArray[r]=false;
-            resourceCost=(int)data.m[v][r];
-             
-            if(reservedResources[n][r]+resourceCost<=data.p[n][r])
-                fitsArray[r]=true;
+
+            fitsArray[r] = false;
+            resourceCost = (int) data.m[v][r];
+
+            if (reservedResources[n][r] + resourceCost <= data.p[n][r]) {
+                fitsArray[r] = true;
+            }
         }
-        
+
         fits = true;
         for (int r = 0; r < data.R; r++) {
-            if(fitsArray[r]==false)
-                fits=false;
+            if (fitsArray[r] == false) {
+                fits = false;
+            }
         }
-        
+
         return fits;
 
     }

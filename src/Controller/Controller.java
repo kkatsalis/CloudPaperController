@@ -147,8 +147,10 @@ public class Controller {
                     activationMatrix=scheduler.RunFF(_cplexData);
                 else if((_config.getAlgorithm()).equals(EAlgorithms.FFRR.toString()))
                     activationMatrix=scheduler.RunFFRR(_cplexData);
+                else if((_config.getAlgorithm()).equals(EAlgorithms.FFRandom.toString()))
+                    activationMatrix=scheduler.RunFF_Random(_cplexData);
                 else 
-                    activationMatrix=scheduler.Run(_cplexData);
+                    activationMatrix=scheduler.RunLyapunov(_cplexData);
                 
             }
            
