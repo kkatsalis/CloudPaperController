@@ -25,6 +25,7 @@ public class Configuration {
     Configuration _config = this;
 
     int simulationID;
+    int runID;
     int numberOfSlots;
     int providersNumber;
     int hostsNumber;
@@ -67,6 +68,26 @@ public class Configuration {
     HashMap associatedAPsPerClient;
 
     String statsUpdateMethod;
+
+     public Configuration(String _algorithm,int _simulationID,int _runID) {
+
+        this.clientNames = new ArrayList<>();
+        this.hostNames = new ArrayList<>();
+        this.vmTypesNames = new ArrayList<>();
+        this.associatedAPsPerClient = new HashMap();
+
+        this.addHostNodes();
+
+        this.addClientNodes();
+        this.addVmTypes();
+        this.loadProperties(_algorithm,_simulationID,_runID);
+        this.loadFairnessWeights();
+        this.loadResources();
+        this.loadPenalties();
+        this.loadXi();
+        this.loadExternalCloudParameters();
+
+    }
 
     public Configuration() {
 
@@ -181,6 +202,45 @@ public class Configuration {
 
     }
 
+    private void loadProperties(String algorithm,int simulationID, int runID) {
+
+        Properties property = new Properties();
+
+        try {
+            String filename = "simulation.properties";
+            InputStream input = Configuration.class.getClassLoader().getResourceAsStream(filename);
+
+            // load a properties file
+            property.load(input);
+
+            this.simulationID = simulationID;
+            this.runID = runID;
+            this.algorithm = algorithm;
+            
+            
+            providersNumber = Integer.valueOf(property.getProperty("providers"));
+            numberOfSlots = Integer.valueOf(property.getProperty("slots"));
+            nitosServer = String.valueOf(property.getProperty("server"));
+            
+            slotDuration = Integer.valueOf(property.getProperty("slotDuration"));
+            slotDurationMetric = String.valueOf(property.getProperty("slotDurationMetric"));
+            numberOfMachineStatsPerSlot = Integer.valueOf(property.getProperty("numberOfMachineStatsPerSlot"));
+            machineResourcesNumber = Integer.valueOf(property.getProperty("machineResourcesNumber"));
+           // abRequestsNumber=Integer.valueOf(property.getProperty("abRequestsNumber"));
+            //   abBatchRequestsNumber=Integer.valueOf(property.getProperty("abBatchRequestsNumber"));
+            omega = Double.valueOf(property.getProperty("omega"));
+            cloudVM_number = Integer.valueOf(property.getProperty("cloudVM_number"));
+            servicesNumber = Integer.valueOf(property.getProperty("servicesNumber"));
+            statsUpdateMethod = String.valueOf(property.getProperty("stats_updateMethod"));
+
+            priceBase = Double.valueOf(property.getProperty("priceBase"));
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+
+    }
+
+   
     private void loadProperties() {
 
         Properties property = new Properties();
@@ -193,10 +253,14 @@ public class Configuration {
             property.load(input);
 
             simulationID = Integer.valueOf(property.getProperty("simulationID"));
+            runID = Integer.valueOf(property.getProperty("runID"));
+            algorithm = String.valueOf(property.getProperty("algorithm"));
+            
+            
             providersNumber = Integer.valueOf(property.getProperty("providers"));
             numberOfSlots = Integer.valueOf(property.getProperty("slots"));
             nitosServer = String.valueOf(property.getProperty("server"));
-            algorithm = String.valueOf(property.getProperty("algorithm"));
+            
             slotDuration = Integer.valueOf(property.getProperty("slotDuration"));
             slotDurationMetric = String.valueOf(property.getProperty("slotDurationMetric"));
             numberOfMachineStatsPerSlot = Integer.valueOf(property.getProperty("numberOfMachineStatsPerSlot"));
@@ -552,6 +616,10 @@ public class Configuration {
 
     public double[][][] getXi() {
         return xi;
+    }
+
+    public int getRunID() {
+        return runID;
     }
 
     

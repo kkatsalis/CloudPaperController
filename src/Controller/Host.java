@@ -9,6 +9,7 @@ import Enumerators.EMachineTypes;
 import Statistics.HostStats;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  *
@@ -20,7 +21,7 @@ public class Host {
     Configuration _config;
     String _nodeName;
     
-    List<VM> _VMs;    // A list with VMs per Host Machine;
+    CopyOnWriteArrayList<VM> _VMs;    // A list with VMs per Host Machine;
     
     HostStats _hostStats; // A number of measurements is taken for every Host per Slot
     Resources _resources;
@@ -31,7 +32,7 @@ public class Host {
         this._config=config;
         this._nodeName=nodeName;
     
-        this._VMs=new ArrayList<>();     // A list with VMs per Host Machine;
+        this._VMs=new CopyOnWriteArrayList<>();     // A list with VMs per Host Machine;
         this._resources=new Resources();
         
         loadResourcesSpecification();
@@ -51,7 +52,7 @@ public class Host {
         return _hostStats;
     }
 
-    public List<VM> getVMs() {
+    public CopyOnWriteArrayList<VM> getVMs() {
         return _VMs;
     }
 

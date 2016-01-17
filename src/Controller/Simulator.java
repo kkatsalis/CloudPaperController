@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.JSONException;
@@ -78,6 +79,40 @@ public class Simulator {
     FakeWebRequestUtilities _fakeWebUtilities;
      
     int[][][] _webRequestPattern;
+    
+     public Simulator(String algorithm,int simulatorID,int runID){
+        
+        this._config=new Configuration(algorithm,simulatorID,runID);
+        this._hostNames=_config.getHostNames();
+        this._clientNames=_config.getClientNames();
+        this.controllerTimer = new Timer();
+        this._clientsTimer=new Timer[_clientNames.size()][_config.getProvidersNumber()][_config.getServicesNumber()];
+        
+        
+        this._webUtility=new WebUtilities(_config);
+        this._db=new DBClass();
+        this._dbUtilities=new DBUtilities(_hosts, _webUtility,_db,_config);
+        
+        System.out.println("********** System Initialization Phase ****************");
+        
+        initializeNodesAndSlots(); //creates: Hosts, Clients, Slots
+        initializeProviders();
+        initializeServiceArrivalRateGenerators();
+        initializeLifeTimeGenerators();
+        initializeWebRequestsArrivalRateGenerators();
+        
+        this._controller=new Controller(_hosts,_webClients,_config,_slots,_dbUtilities,_provider);
+        
+        addInitialServiceRequestEvents();
+       
+        this._fakeWebUtilities=new FakeWebRequestUtilities(_provider, _config);
+        
+        System.out.println("********** End of System Initialization Phase **************");
+        System.out.println();
+        
+        if(true)
+            this.startClientsRequests();
+    }
     
     public Simulator(){
         
@@ -1051,7 +1086,7 @@ public class Simulator {
         try {
             
        
-        List<VM> potentialVMs=new ArrayList<>();
+        CopyOnWriteArrayList<VM> potentialVMs=new CopyOnWriteArrayList<>();
         
       
         for (Host _host : _hosts) {
@@ -1085,8 +1120,9 @@ public class Simulator {
 //        }
         
          } catch (Exception e) {
+            System.out.println("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$");
              System.out.println(e);
-             System.exit(0);
+            System.exit(0);
         }
         
         return null;

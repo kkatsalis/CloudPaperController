@@ -259,6 +259,7 @@ public class DBUtilities {
         String[] data = { 
               
                     String.valueOf(_config.getSimulationID()),
+                    String.valueOf(_config.getRunID()),
                     String.valueOf(_config.getAlgorithm()),
                 
                     String.valueOf(stats.getSlot()),
@@ -299,6 +300,7 @@ public class DBUtilities {
         String[] data = { 
             
                     String.valueOf(_config.getSimulationID()),
+                    String.valueOf(_config.getRunID()),
                     String.valueOf(_config.getAlgorithm()),
                 
                     String.valueOf(stats.getSlot()),

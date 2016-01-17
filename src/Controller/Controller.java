@@ -121,12 +121,12 @@ public class Controller {
             
             // ----------- Load VM Request Matrix
             int[][][] vmRequestMatrix=loadVMRequestMatrix(slot);             //requestMatrix[v][s][p]
-            System.out.println(Arrays.deepToString(vmRequestMatrix));
+           // System.out.println(Arrays.deepToString(vmRequestMatrix));
            
             
             // ----------- Load VM Deactivation Matrix
             prepareVmDeactivationMatrix(slot,vmDeactivationMatrix,simulatorStatistics);
-             System.out.println(Arrays.deepToString(vmDeactivationMatrix));
+            // System.out.println(Arrays.deepToString(vmDeactivationMatrix));
             
             // -----------delete VMs
             deleteVMs(slot);
