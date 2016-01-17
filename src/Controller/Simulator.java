@@ -90,7 +90,7 @@ public class Simulator {
         
         
         this._webUtility=new WebUtilities(_config);
-        this._db=new DBClass();
+        this._db=new DBClass(_config.getSimulationID(),_config.getAlgorithm());
         this._dbUtilities=new DBUtilities(_hosts, _webUtility,_db,_config);
         
         System.out.println("********** System Initialization Phase ****************");
@@ -124,7 +124,7 @@ public class Simulator {
         
         
         this._webUtility=new WebUtilities(_config);
-        this._db=new DBClass();
+        this._db=new DBClass(_config.getSimulationID(),_config.getAlgorithm());
         this._dbUtilities=new DBUtilities(_hosts, _webUtility,_db,_config);
         
         System.out.println("********** System Initialization Phase ****************");
@@ -1053,6 +1053,8 @@ public class Simulator {
             }
             stats.setType(type);
             stats.setResponseTime(responseTime);
+            
+            if(measurement%_config.getSkipWebClientStats()==0)
             _dbUtilities.updateWebClientStatistics2DB(slot, stats);
             
             // update Web Requests Statistics Array

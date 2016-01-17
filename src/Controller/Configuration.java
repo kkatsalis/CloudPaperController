@@ -65,6 +65,8 @@ public class Configuration {
     double omega;
     int abRequestsNumber = 1000;
     int abBatchRequestsNumber = 100;
+    
+    int skipWebClientStats;
     HashMap associatedAPsPerClient;
 
     String statsUpdateMethod;
@@ -234,6 +236,7 @@ public class Configuration {
             statsUpdateMethod = String.valueOf(property.getProperty("stats_updateMethod"));
 
             priceBase = Double.valueOf(property.getProperty("priceBase"));
+            skipWebClientStats= Integer.valueOf(property.getProperty("skipWebClientStats"));
         } catch (Exception e) {
             System.out.println(e.toString());
         }
@@ -273,6 +276,7 @@ public class Configuration {
             statsUpdateMethod = String.valueOf(property.getProperty("stats_updateMethod"));
 
             priceBase = Double.valueOf(property.getProperty("priceBase"));
+            skipWebClientStats= Integer.valueOf(property.getProperty("skipWebClientStats"));
         } catch (Exception e) {
             System.out.println(e.toString());
         }
@@ -620,6 +624,10 @@ public class Configuration {
 
     public int getRunID() {
         return runID;
+    }
+
+    public int getSkipWebClientStats() {
+        return skipWebClientStats;
     }
 
     

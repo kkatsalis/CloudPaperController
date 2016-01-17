@@ -37,11 +37,15 @@ public class DBClass {
     OmlMP mp_simulatorStats;
     
     //(String oml_app_name, String oml_exp_id, String oml_name, String oml_server)            
-    public DBClass(){
+    public DBClass(int simID, String algorithm){
     
         System.out.println("********** DB Initialization Phase ****************");
         
-        omlclient = new OMLBase("kkatsalis", "katsalis_cloud", "katsalis_cloud", "tcp:nitlab.inf.uth.gr:3003");
+        String oml_exp_id="katsalis_cloud_sim_"+String.valueOf(simID);
+        String oml_name="katsalis_cloud_sim_"+String.valueOf(simID);
+        
+     
+        omlclient = new OMLBase("kkatsalis",oml_exp_id ,oml_name, "tcp:nitlab.inf.uth.gr:3003");
         
         // Activate in real system
         initiliazeHostDBTableSchema();
@@ -69,8 +73,13 @@ public class DBClass {
         omlclient.addmp("vmInterfaceStatsTable",mp_vmIinterfaceStats);
         omlclient.addmp("webClientABStatsTable",mp_webClientABStats);
         */
-        omlclient.addmp("webClientServiceStatsTable",mp_webClientServiceStats);
-        omlclient.addmp("simulatorStatsTable",mp_simulatorStats);
+        String tableName;
+        
+        tableName="sim"+simID+"_"+algorithm+"_webClientStats";
+        omlclient.addmp(tableName,mp_webClientServiceStats);
+        
+        tableName="sim"+simID+"_"+algorithm+"_simStats";
+        omlclient.addmp(tableName,mp_simulatorStats);
 
         try {
              omlclient.start();
