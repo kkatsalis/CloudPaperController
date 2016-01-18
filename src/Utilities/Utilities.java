@@ -13,6 +13,7 @@ import Controller.VM;
 import Controller.VMRequest;
 import Controller.ServiceRequestRates;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -135,49 +136,63 @@ public class Utilities {
         return id;
     }
 
-    public static List<VmRequestStruct> transformReqeustMatrixToRandomList(int[][][] requestMatrix,int pr, int vi, int si) {
+    public static List<VmRequestStruct> transformReqeustMatrixToRandomList(int[][][] requestMatrix, int pr, int vi, int si) {
 
         List<VmRequestStruct> list = new ArrayList<VmRequestStruct>();
 
-        boolean empty=false;
+        boolean empty = false;
         int p;
         int v;
         int s;
+
+        int[][][] requestMatrixCopy=new int[pr][vi][si];
         
-        while(!checkArrayEmptiness(requestMatrix,pr,vi,si)){
-        
-             p=randInt(0,pr-1);
-             v=randInt(0,vi-1);
-             s=randInt(0,si-1);
-             
-             if(requestMatrix[p][v][s]>0){
-                requestMatrix[p][v][s]--;
-                list.add(new VmRequestStruct(p, v, s));
-             }
-                 
+        for (int i = 0; i < pr; i++) {
+            for (int j = 0; j < vi; j++) {
+                for (int k = 0; k < si; k++) {
+                    requestMatrixCopy[i][j][k]=requestMatrix[i][j][k];
+                }
+                
+            }
         }
         
+        while (!checkArrayEmptiness(requestMatrixCopy, pr, vi, si)) {
+
+            p = randInt(0, pr - 1);
+            v = randInt(0, vi - 1);
+            s = randInt(0, si - 1);
+
+            if (requestMatrixCopy[p][v][s] > 0) {
+                requestMatrixCopy[p][v][s]--;
+                list.add(new VmRequestStruct(p, v, s));
+            }
+
+        }
+
         return list;
 
     }
-    
-    public static boolean checkArrayEmptiness(int[][][] requestMatrix,int pr, int vi, int si) {
 
-        boolean empty=true;
-        
-         for (int p = 0; p < pr; p++) {
-             for (int v = 0; v < vi; v++) {
-                 for (int s = 0; s < si; s++) {
-                     if(requestMatrix[p][v][s]>0)
-                         empty=false;
-                 }
-             }
-             
-         }
-        
+   
+   
+
+    public static boolean checkArrayEmptiness(int[][][] requestMatrix, int pr, int vi, int si) {
+
+        boolean empty = true;
+
+        for (int p = 0; p < pr; p++) {
+            for (int v = 0; v < vi; v++) {
+                for (int s = 0; s < si; s++) {
+                    if (requestMatrix[p][v][s] > 0) {
+                        empty = false;
+                    }
+                }
+            }
+
+        }
+
         return empty;
 
     }
 
-    
 }
