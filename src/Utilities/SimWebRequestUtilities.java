@@ -17,7 +17,7 @@ import jsc.distributions.Pareto;
  *
  * @author kostas
  */
-public class FakeWebRequestUtilities {
+public class SimWebRequestUtilities {
     
     // How to create service Time per provider, per Service (Local)
     Exponential[][] _localServiceTimeExponentialGenerator;
@@ -29,7 +29,7 @@ public class FakeWebRequestUtilities {
     Provider[] _provider;
     Configuration _config;
 
-    public FakeWebRequestUtilities(Provider[] _provider, Configuration _config) {
+    public SimWebRequestUtilities(Provider[] _provider, Configuration _config) {
         this._provider = _provider;
         this._config = _config;
         
@@ -101,12 +101,12 @@ public class FakeWebRequestUtilities {
             
             for (int j = 0; j < servicesNumber; j++) {
                 parameter="provider"+i+"_service"+j+"_cloudServiceRateType";
-                serviceTimeType=String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get("parameter"));
+                serviceTimeType=String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get(parameter));
                 
                 if(serviceTimeType.equals(EGeneratorType.Exponential.toString())){
                     
-                    parameter="provider"+i+"_service"+j+"_localServiceRate_lamda";
-                    lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get("parameter")));
+                    parameter="provider"+i+"_service"+j+"_cloudServiceRate_lamda";
+                    lamda=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get(parameter)));
                     _cloudServiceTimeExponentialGenerator[i][j]=new Exponential(lamda);
                   
                 }
@@ -114,9 +114,9 @@ public class FakeWebRequestUtilities {
                   
                     
                     parameter= "provider"+i+"_service"+j+"_localServiceRate_location";
-                    location=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get("parameter")));
+                    location=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get(parameter)));
                     parameter= "provider"+i+"_service"+j+"_localServiceRate_shape";
-                    shape=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get("parameter")));
+                    shape=Double.valueOf( String.valueOf(_provider[i].getRequestsForService().get(j).getCloudServiceTimeConfig().get(parameter)));
                 
                     _cloudServiceTimeParetoGenerator[i][j]=new Pareto(location, shape); //Dummy object
                 }

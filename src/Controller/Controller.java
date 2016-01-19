@@ -19,7 +19,7 @@ import Cplex.SchedulerData;
 import Enumerators.EAlgorithms;
 import Enumerators.EStatsUpdateMethod;
 import Statistics.SimulatorStats;
-import Utilities.FakeWebRequestUtilities;
+import Utilities.SimWebRequestUtilities;
 import Utilities.Utilities;
 import java.io.IOException;
 import java.util.ArrayList;

@@ -315,6 +315,42 @@ public class DBUtilities {
      
      
      }
+
+    public void updateWebClientStatistics2DBPerSlot(int slot, WebRequestStatsSlot[] _webRequestStatsSlot) {
+        
+       int numberOfRequests=0;
+       double averageResponseTime=0;
+        
+        for (int p = 0; p < _config.getProvidersNumber(); p++) {
+            for (int s = 0; s < _config.getServicesNumber(); s++) {
+                
+                numberOfRequests=_webRequestStatsSlot[slot].getNumberOfRequests()[p][s];
+                averageResponseTime=_webRequestStatsSlot[slot].getResponseTime()[p][s];
+                averageResponseTime=(double)averageResponseTime/numberOfRequests;
+                
+                   String[] data = { 
+            
+                    String.valueOf(_config.getSimulationID()),
+                    String.valueOf(_config.getRunID()),
+                    String.valueOf(_config.getAlgorithm()),
+                
+                    String.valueOf(slot),
+                 
+                    String.valueOf(p),
+                    String.valueOf(s),
+                    String.valueOf(numberOfRequests),
+                    String.valueOf(averageResponseTime)
+                    };
+                    
+                    _db.getMp_webClientServiceStatsSlot().inject(data);
+                
+                
+                
+            }
+        }
+        
+      
+    }
      
      
 }
