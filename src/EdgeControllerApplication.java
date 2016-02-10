@@ -21,15 +21,14 @@ public class EdgeControllerApplication {
         String algorithm;
         
         if(args.length>0){
-        
-            algorithm=String.valueOf(args[0]);
-            simulationID=Integer.parseInt(args[1]);  
-            runID=Integer.parseInt(args[2]);
-          
+           
+            algorithm=args[0].toString();
+            simulationID=Integer.valueOf(args[1].toString());
+            runID=Integer.valueOf(args[2].toString());
             
             simulator=new Simulator(algorithm,simulationID,runID);
             simulator.StartExperiment();
-        
+         
         }else{
         
             simulator=new Simulator();

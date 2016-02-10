@@ -103,6 +103,7 @@ public class Simulator {
         initializeLifeTimeGenerators();
         initializeWebRequestsArrivalRateGenerators();
 
+        initiliazeWebRequestStatsSlot();
         this._controller = new Controller(_hosts, _webClients, _config, _slots, _dbUtilities, _provider);
 
         addInitialServiceRequestEvents();
@@ -198,7 +199,8 @@ public class Simulator {
         // How to create requests per Service, one per provider
         _rateExponentialGenerator = new Exponential[_config.getProvidersNumber()][_config.getServicesNumber()];
         _rateParetoGenerator = new Pareto[_config.getProvidersNumber()][_config.getServicesNumber()];
-
+ 
+       
         String rateType = "";
         String parameter = "";
         double lamda;
@@ -501,9 +503,10 @@ public class Simulator {
 
     }
 
-    private int calculateWebRequestInterarrivalInterval(int providerID, int serviceID) {
+    private double calculateWebRequestInterarrivalInterval(int providerID, int serviceID) {
 
-        int interArrivalTime = -1;
+        double interArrivalTime = -1;
+        long interval=0;
         double min = 0;
         double max = 0;
         Double value;
@@ -514,7 +517,7 @@ public class Simulator {
         switch (EGeneratorType.valueOf(generatorType)) {
             case Exponential:
                 value = _webRequestArrivalRateExponentialGenerator[providerID][serviceID].random();
-                interArrivalTime = value.intValue();
+                interArrivalTime = value.doubleValue();
                 break;
 
             case Pareto:
@@ -538,6 +541,7 @@ public class Simulator {
                 break;
         }
 
+               
         return interArrivalTime;
 
     }
@@ -957,19 +961,6 @@ public class Simulator {
         @Override
         public void run() {
 
-            int duration = _config.getSlotDuration();
-
-            if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.seconds.toString())) {
-                duration = 1000 * duration;
-            } else if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.minutes.toString())) {
-                duration = 60 * duration * 1000;
-            } else if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.hours.toString())) {
-                duration = 3600 * duration * 1000;
-            }
-
-            int delay = duration * calculateWebRequestInterarrivalInterval(providerID, serviceID);
-
-            _clientsTimer[clientID][providerID][serviceID].schedule(new ExecuteClientRequest(_webRequestStatsSlot, clientID, providerID, serviceID, measurement + 1), delay);
             String clientName = _clientNames.get(clientID);
             String vmIP = chooseVMforService(serviceID, providerID, clientName);
 
@@ -1011,6 +1002,26 @@ public class Simulator {
                 _webRequestPattern[slot][providerID][serviceID]++;
 
             }
+            
+            // Schedule new event
+             int duration = _config.getSlotDuration();
+
+            if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.seconds.toString())) {
+                duration = 1000 * duration;
+            } else if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.minutes.toString())) {
+                duration = 60 * duration * 1000;
+            } else if (_config.getSlotDurationMetric().equals(ESlotDurationMetric.hours.toString())) {
+                duration = 3600 * duration * 1000;
+            }
+
+            double x=duration * calculateWebRequestInterarrivalInterval(providerID, serviceID);
+            
+            long delay = (long)x ;
+
+            _clientsTimer[clientID][providerID][serviceID].schedule(new ExecuteClientRequest(_webRequestStatsSlot, clientID, providerID, serviceID, measurement + 1), delay);
+           
+            
+            
 
         }
 
